@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -34,9 +35,8 @@ func Link(w http.ResponseWriter, r *http.Request) {
 		}
 		errorResponse(w, "link not fount", http.StatusNotFound)
 	case http.MethodPost:
-		fmt.Println("post")
-		if r.Header.Get("Content-type") != "application/json" {
-			errorResponse(w, "Content-type is not application/json", http.StatusUnsupportedMediaType)
+		if r.Header.Get("Content-type") != "text/plain" {
+			errorResponse(w, "Content-type is not text/plain", http.StatusUnsupportedMediaType)
 			return
 		}
 		defer r.Body.Close()
@@ -45,14 +45,14 @@ func Link(w http.ResponseWriter, r *http.Request) {
 			errorResponse(w, "Error read body from request", http.StatusBadRequest)
 			return
 		}
-		fmt.Println(string(body))
-		var link LinkEntity
-		if err = json.Unmarshal(body, &link); err != nil {
-			errorResponse(w, "Error unmarshaling error", http.StatusBadRequest)
-			return
+		link := LinkEntity{
+			ID:          strconv.Itoa(rand.Intn(10000)),
+			OriginalURL: string(body),
+			ShortURL:    "short" + string(body),
 		}
 		links = append(links, link)
 		w.WriteHeader(http.StatusCreated)
+  w.Write([]byte(link.ShortURL))
 	}
 }
 
