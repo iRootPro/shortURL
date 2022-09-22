@@ -35,10 +35,6 @@ func Link(w http.ResponseWriter, r *http.Request) {
 		}
 		errorResponse(w, "link not fount", http.StatusNotFound)
 	case http.MethodPost:
-		if r.Header.Get("Content-type") != "text/plain" {
-			errorResponse(w, "Content-type is not text/plain", http.StatusUnsupportedMediaType)
-			return
-		}
 		defer r.Body.Close()
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -52,7 +48,7 @@ func Link(w http.ResponseWriter, r *http.Request) {
 		}
 		links = append(links, link)
 		w.WriteHeader(http.StatusCreated)
-  w.Write([]byte(link.ShortURL))
+		w.Write([]byte(link.ShortURL))
 	}
 }
 
