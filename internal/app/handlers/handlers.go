@@ -42,12 +42,12 @@ func Link(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-    shortLink := strconv.Itoa(rand.Intn(100000))
+		id := strconv.Itoa(rand.Intn(100000))
 
 		link := LinkEntity{
-			ID:          shortLink,
+			ID:          id,
 			OriginalURL: string(body),
-      ShortURL: shortLink,
+      ShortURL:    "http://localhost:8080/" + id,
 		}
 		links = append(links, link)
 		w.WriteHeader(http.StatusCreated)
