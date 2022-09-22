@@ -44,7 +44,7 @@ func Link(w http.ResponseWriter, r *http.Request) {
 		link := LinkEntity{
 			ID:          strconv.Itoa(rand.Intn(10000)),
 			OriginalURL: string(body),
-			ShortURL:    "short" + string(body),
+			ShortURL:    string(body),
 		}
 		links = append(links, link)
 		w.WriteHeader(http.StatusCreated)
