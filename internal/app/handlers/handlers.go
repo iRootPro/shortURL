@@ -41,10 +41,13 @@ func Link(w http.ResponseWriter, r *http.Request) {
 			errorResponse(w, "Error read body from request", http.StatusBadRequest)
 			return
 		}
+
+    shortLink := strconv.Itoa(rand.Intn(100000))
+
 		link := LinkEntity{
-			ID:          strconv.Itoa(rand.Intn(10000)),
+			ID:          shortLink,
 			OriginalURL: string(body),
-			ShortURL:    string(body),
+      ShortURL: shortLink,
 		}
 		links = append(links, link)
 		w.WriteHeader(http.StatusCreated)
