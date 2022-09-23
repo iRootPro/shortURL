@@ -7,15 +7,11 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/irootpro/shorturl/internal/app/storage"
 )
 
-type LinkEntity struct {
-	ID          string `json:"id"`
-	OriginalURL string `json:"original_url"`
-	ShortURL    string `json:"short_url"`
-}
-
-var links []LinkEntity
+const host = "http://localhost:8080"
 
 func Link(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -26,7 +22,7 @@ func Link(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		for _, v := range links {
+		for _, v := range storage.Links {
 			if v.ID == id {
 				w.Header().Add("Location", v.OriginalURL)
 				w.WriteHeader(http.StatusTemporaryRedirect)
@@ -44,12 +40,12 @@ func Link(w http.ResponseWriter, r *http.Request) {
 
 		id := strconv.Itoa(rand.Intn(100000))
 
-		link := LinkEntity{
+		link := storage.LinkEntity{
 			ID:          id,
 			OriginalURL: string(body),
-      ShortURL:    "http://localhost:8080/" + id,
+			ShortURL:    host + "/" + id,
 		}
-		links = append(links, link)
+		storage.Links = append(storage.Links, link)
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(link.ShortURL))
 	}
