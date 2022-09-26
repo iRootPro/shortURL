@@ -3,9 +3,8 @@ package main
 import (
 	"net/http"
 
-	"github.com/irootpro/shorturl/internal/app/handlers"
+	"github.com/irootpro/shorturl/internal/url/handlers"
 )
-
 
 func main() {
 	http.HandleFunc("/", handlers.Link)

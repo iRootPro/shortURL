@@ -3,12 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"io"
-	"math/rand"
 	"net/http"
-	"strconv"
 	"strings"
 
-	"github.com/irootpro/shorturl/internal/app/storage"
+	"github.com/irootpro/shorturl/internal/url/storage"
+	"github.com/irootpro/shorturl/internal/url/usecases"
 )
 
 const host = "http://localhost:8080"
@@ -38,8 +37,7 @@ func Link(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		id := strconv.Itoa(rand.Intn(100000))
-
+		id := usecases.GenerateShortLink(body)
 		link := storage.LinkEntity{
 			ID:          id,
 			OriginalURL: string(body),
