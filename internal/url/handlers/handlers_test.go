@@ -135,6 +135,7 @@ func TestLink(t *testing.T) {
 		h := http.HandlerFunc(LinkHandler)
 		h.ServeHTTP(w, request)
 		result := w.Result()
+		defer result.Body.Close()
 		fmt.Println("STATUS", result.StatusCode)
 		assert.Equal(t, http.StatusBadRequest, result.StatusCode)
 	})
