@@ -12,12 +12,12 @@ import (
 
 const host = "http://localhost:8080"
 
-func Link(w http.ResponseWriter, r *http.Request) {
+func LinkHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		id := strings.TrimPrefix(r.URL.Path, "/")
 		if id == "" {
-			errorResponse(w, "id not found on request", http.StatusBadRequest)
+			errorResponse(w, "id not found on postRequest", http.StatusBadRequest)
 			return
 		}
 
@@ -28,12 +28,12 @@ func Link(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		errorResponse(w, "link not fount", http.StatusNotFound)
+		errorResponse(w, "link not found", http.StatusNotFound)
 	case http.MethodPost:
 		defer r.Body.Close()
 		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			errorResponse(w, "Error read body from request", http.StatusBadRequest)
+		if err != nil || string(body) == "" {
+			errorResponse(w, "Error read body from postRequest", http.StatusBadRequest)
 			return
 		}
 
