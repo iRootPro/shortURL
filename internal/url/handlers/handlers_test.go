@@ -100,7 +100,7 @@ func TestLink(t *testing.T) {
 			w = httptest.NewRecorder()
 			h.ServeHTTP(w, requestGet)
 			result = w.Result()
-
+			defer result.Body.Close()
 			assert.Equal(t, test.statusCodeGet, result.StatusCode)
 			assert.Equal(t, test.originalURL, result.Header.Get("Location"))
 		})
@@ -125,6 +125,7 @@ func TestLink(t *testing.T) {
 			var errorMsg errorMessage
 
 			err = json.Unmarshal(responseBody, &errorMsg)
+			require.NoError(t, err)
 			assert.Equal(t, test.error, errorMsg.Message)
 		})
 	}
