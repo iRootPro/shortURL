@@ -100,10 +100,9 @@ func TestLink(t *testing.T) {
 			c.SetPath(":hash")
 			c.SetParamNames("hash")
 			c.SetParamValues(test.hashShortURL)
-			err = GetURL(c)
-			if err != nil {
-				return
-			}
+
+			assert.NoError(t, GetURL(c))
+
 			result = w.Result()
 			defer result.Body.Close()
 			assert.Equal(t, test.statusCodeGet, result.StatusCode)
@@ -120,10 +119,9 @@ func TestLink(t *testing.T) {
 			c.SetPath(":hash")
 			c.SetParamNames("hash")
 			c.SetParamValues(test.getRequest)
-			err := GetURL(c)
-			if err != nil {
-				return
-			}
+
+			assert.NoError(t, GetURL(c))
+
 			result := w.Result()
 
 			assert.Equal(t, test.statusCodeGet, result.StatusCode)
