@@ -80,10 +80,9 @@ func TestLink(t *testing.T) {
 			requestPost := httptest.NewRequest(http.MethodPost, test.postRequest, bodyReader)
 			w := httptest.NewRecorder()
 			c := e.NewContext(requestPost, w)
-			err := PostURL(c)
-			if err != nil {
-				return
-			}
+
+			assert.NoError(t, PostURL(c))
+
 			result := w.Result()
 
 			assert.Equal(t, test.statusCode, result.StatusCode)
