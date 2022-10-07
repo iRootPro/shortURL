@@ -80,7 +80,10 @@ func TestLink(t *testing.T) {
 			requestPost := httptest.NewRequest(http.MethodPost, test.postRequest, bodyReader)
 			w := httptest.NewRecorder()
 			c := e.NewContext(requestPost, w)
-			PostURL(c)
+			err := PostURL(c)
+			if err != nil {
+				return
+			}
 			result := w.Result()
 
 			assert.Equal(t, test.statusCode, result.StatusCode)
@@ -98,7 +101,10 @@ func TestLink(t *testing.T) {
 			c.SetPath(":hash")
 			c.SetParamNames("hash")
 			c.SetParamValues(test.hashShortURL)
-			GetURL(c)
+			err = GetURL(c)
+			if err != nil {
+				return
+			}
 			result = w.Result()
 			defer result.Body.Close()
 			assert.Equal(t, test.statusCodeGet, result.StatusCode)
@@ -115,7 +121,10 @@ func TestLink(t *testing.T) {
 			c.SetPath(":hash")
 			c.SetParamNames("hash")
 			c.SetParamValues(test.getRequest)
-			GetURL(c)
+			err := GetURL(c)
+			if err != nil {
+				return
+			}
 			result := w.Result()
 
 			assert.Equal(t, test.statusCodeGet, result.StatusCode)
