@@ -1,21 +1,16 @@
 package handlers
 
 import (
-	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-type errorMessage struct {
-	Message string `json:"message"`
-}
 
 func TestLink(t *testing.T) {
 	testsPositive := []struct {
@@ -25,7 +20,7 @@ func TestLink(t *testing.T) {
 		statusCode    int
 		statusCodeGet int
 		postRequest   string
-		getRequest    string
+		hashShortURL  string
 	}{
 		{
 			name:          "LinkHandler google.com",
@@ -34,7 +29,7 @@ func TestLink(t *testing.T) {
 			statusCode:    http.StatusCreated,
 			statusCodeGet: http.StatusTemporaryRedirect,
 			postRequest:   "http://localhost:8080",
-			getRequest:    "http://localhost:8080/aHR0cHM6Ly9nb29nbGUuY29t",
+			hashShortURL:  "aHR0cHM6Ly9nb29nbGUuY29t",
 		},
 		{
 			name:          "LinkHandler amazon.com",
@@ -43,7 +38,7 @@ func TestLink(t *testing.T) {
 			statusCode:    http.StatusCreated,
 			statusCodeGet: http.StatusTemporaryRedirect,
 			postRequest:   "http://localhost:8080",
-			getRequest:    "http://localhost:8080/aHR0cHM6Ly9hbWF6b24uY29t",
+			hashShortURL:  "aHR0cHM6Ly9hbWF6b24uY29t",
 		},
 	}
 
@@ -64,7 +59,7 @@ func TestLink(t *testing.T) {
 			statusCode:    http.StatusCreated,
 			statusCodeGet: http.StatusNotFound,
 			postRequest:   "http://localhost:8080",
-			getRequest:    "http://localhost:8080/aHR0cHM6Ly9nb29",
+			getRequest:    "aHR0cHM6Ly9nb29",
 			error:         "link not found",
 		},
 		{
@@ -74,17 +69,18 @@ func TestLink(t *testing.T) {
 			statusCode:    http.StatusCreated,
 			statusCodeGet: http.StatusBadRequest,
 			postRequest:   "http://localhost:8080",
-			getRequest:    "http://localhost:8080",
+			getRequest:    "",
 			error:         "id not found on postRequest",
 		},
 	}
 	for _, test := range testsPositive {
 		t.Run(test.name, func(t *testing.T) {
+			e := echo.New()
 			bodyReader := strings.NewReader(test.originalURL)
-			request := httptest.NewRequest(http.MethodPost, test.postRequest, bodyReader)
+			requestPost := httptest.NewRequest(http.MethodPost, test.postRequest, bodyReader)
 			w := httptest.NewRecorder()
-			h := http.HandlerFunc(LinkHandler)
-			h.ServeHTTP(w, request)
+			c := e.NewContext(requestPost, w)
+			err := PostURL(c)
 			result := w.Result()
 
 			assert.Equal(t, test.statusCode, result.StatusCode)
@@ -96,9 +92,13 @@ func TestLink(t *testing.T) {
 
 			assert.Equal(t, test.shortURL, string(shortLinkResult))
 
-			requestGet := httptest.NewRequest(http.MethodGet, test.getRequest, nil)
+			requestGet := httptest.NewRequest(http.MethodGet, "/", nil)
 			w = httptest.NewRecorder()
-			h.ServeHTTP(w, requestGet)
+			c = e.NewContext(requestGet, w)
+			c.SetPath(":hash")
+			c.SetParamNames("hash")
+			c.SetParamValues(test.hashShortURL)
+			err = GetURL(c)
 			result = w.Result()
 			defer result.Body.Close()
 			assert.Equal(t, test.statusCodeGet, result.StatusCode)
@@ -108,10 +108,14 @@ func TestLink(t *testing.T) {
 
 	for _, test := range testsNegative {
 		t.Run(test.name, func(t *testing.T) {
-			requestGet := httptest.NewRequest(http.MethodGet, test.getRequest, nil)
+			e := echo.New()
+			requestGet := httptest.NewRequest(http.MethodGet, "/", nil)
 			w := httptest.NewRecorder()
-			h := http.HandlerFunc(LinkHandler)
-			h.ServeHTTP(w, requestGet)
+			c := e.NewContext(requestGet, w)
+			c.SetPath(":hash")
+			c.SetParamNames("hash")
+			c.SetParamValues(test.getRequest)
+			err := GetURL(c)
 			result := w.Result()
 
 			assert.Equal(t, test.statusCodeGet, result.StatusCode)
@@ -121,23 +125,7 @@ func TestLink(t *testing.T) {
 
 			err = result.Body.Close()
 			require.NoError(t, err)
-
-			var errorMsg errorMessage
-
-			err = json.Unmarshal(responseBody, &errorMsg)
-			require.NoError(t, err)
-			assert.Equal(t, test.error, errorMsg.Message)
+			assert.Equal(t, test.error, string(responseBody))
 		})
 	}
-
-	t.Run("Body is nil", func(t *testing.T) {
-		request := httptest.NewRequest(http.MethodPost, "https://yahoo.com", nil)
-		w := httptest.NewRecorder()
-		h := http.HandlerFunc(LinkHandler)
-		h.ServeHTTP(w, request)
-		result := w.Result()
-		defer result.Body.Close()
-		fmt.Println("STATUS", result.StatusCode)
-		assert.Equal(t, http.StatusBadRequest, result.StatusCode)
-	})
 }

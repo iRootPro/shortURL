@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
-	"strings"
+
+	"github.com/labstack/echo/v4"
 
 	"github.com/irootpro/shorturl/internal/url/storage"
 	"github.com/irootpro/shorturl/internal/url/usecases"
@@ -12,48 +12,35 @@ import (
 
 const host = "http://localhost:8080"
 
-func LinkHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		id := strings.TrimPrefix(r.URL.Path, "/")
-		if id == "" {
-			errorResponse(w, "id not found on postRequest", http.StatusBadRequest)
-			return
-		}
-
-		for _, v := range storage.Links {
-			if v.ID == id {
-				w.Header().Add("Location", v.OriginalURL)
-				w.WriteHeader(http.StatusTemporaryRedirect)
-				return
-			}
-		}
-		errorResponse(w, "link not found", http.StatusNotFound)
-	case http.MethodPost:
-		defer r.Body.Close()
-		body, err := io.ReadAll(r.Body)
-		if err != nil || string(body) == "" {
-			errorResponse(w, "Error read body from postRequest", http.StatusBadRequest)
-			return
-		}
-
-		id := usecases.GenerateShortLink(body)
-		link := storage.LinkEntity{
-			ID:          id,
-			OriginalURL: string(body),
-			ShortURL:    host + "/" + id,
-		}
-		storage.Links = append(storage.Links, link)
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(link.ShortURL))
+func GetURL(c echo.Context) error {
+	id := c.Param("hash")
+	if id == "" {
+		return c.String(http.StatusBadRequest, "id not found on postRequest")
 	}
+
+	for _, v := range storage.Links {
+		if v.ID == id {
+			c.Response().Header().Set("Location", v.OriginalURL)
+			return c.String(http.StatusTemporaryRedirect, "")
+		}
+	}
+
+	return c.String(http.StatusNotFound, "link not found")
 }
 
-func errorResponse(w http.ResponseWriter, message string, httpStatusCode int) {
-	w.Header().Add("Content-type", "application/json")
-	w.WriteHeader(httpStatusCode)
-	response := make(map[string]string)
-	response["message"] = message
-	jsonResponse, _ := json.Marshal(response)
-	w.Write(jsonResponse)
+func PostURL(c echo.Context) error {
+	defer c.Request().Body.Close()
+	body, err := io.ReadAll(c.Request().Body)
+	if err != nil || string(body) == "" {
+		return c.String(http.StatusBadRequest, "error read body from postRequest")
+	}
+
+	id := usecases.GenerateShortLink(body)
+	link := storage.LinkEntity{
+		ID:          id,
+		OriginalURL: string(body),
+		ShortURL:    host + "/" + id,
+	}
+	storage.Links = append(storage.Links, link)
+	return c.String(http.StatusCreated, link.ShortURL)
 }
