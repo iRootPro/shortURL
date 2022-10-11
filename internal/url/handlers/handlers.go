@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/irootpro/shorturl/internal/url/service"
 	"github.com/irootpro/shorturl/internal/url/storage"
 	"github.com/irootpro/shorturl/internal/url/usecases"
 )
@@ -18,14 +19,14 @@ func GetURL(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "id not found on postRequest")
 	}
 
-	for _, v := range storage.Links {
-		if v.ID == id {
-			c.Response().Header().Set("Location", v.OriginalURL)
-			return c.String(http.StatusTemporaryRedirect, "")
-		}
+	shortURL, err := service.ShortUrlByID(storage.Links, id)
+	if err != nil {
+		return c.String(http.StatusNotFound, err.Error())
 	}
 
-	return c.String(http.StatusNotFound, "link not found")
+	c.Response().Header().Set("Location", shortURL)
+	return c.String(http.StatusTemporaryRedirect, "")
+
 }
 
 func PostURL(c echo.Context) error {
