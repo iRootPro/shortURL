@@ -19,7 +19,7 @@ func GetURL(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "id not found on postRequest")
 	}
 
-	shortURL, err := service.ShortUrlByID(storage.Links, id)
+	shortURL, err := service.ShortURLByID(storage.Links, id)
 	if err != nil {
 		return c.String(http.StatusNotFound, err.Error())
 	}

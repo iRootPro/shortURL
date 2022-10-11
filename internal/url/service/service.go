@@ -6,7 +6,7 @@ import (
 	"github.com/irootpro/shorturl/internal/url/storage"
 )
 
-func ShortUrlByID(links []storage.LinkEntity, id string) (string, error) {
+func ShortURLByID(links []storage.LinkEntity, id string) (string, error) {
 	for _, v := range links {
 		if v.ID == id {
 			return v.OriginalURL, nil
