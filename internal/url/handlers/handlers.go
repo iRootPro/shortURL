@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -40,7 +41,7 @@ func PostURL(c echo.Context) error {
 	link := storage.LinkEntity{
 		ID:          id,
 		OriginalURL: string(body),
-		ShortURL:    host + "/" + id,
+		ShortURL:    fmt.Sprintf("%s/%s", host, id),
 	}
 	storage.Links = append(storage.Links, link)
 	return c.String(http.StatusCreated, link.ShortURL)
