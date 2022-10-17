@@ -16,7 +16,7 @@ import (
 const host = "http://localhost:8080"
 
 type RequestPOST struct {
-	Url string `json:"url"`
+	URL string `json:"url"`
 }
 
 type ResponsePOST struct {
@@ -63,10 +63,10 @@ func PostURLJSON(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "")
 	}
 
-	id := usecases.GenerateShortLink([]byte(request.Url))
+	id := usecases.GenerateShortLink([]byte(request.URL))
 	link := storage.LinkEntity{
 		ID:          id,
-		OriginalURL: request.Url,
+		OriginalURL: request.URL,
 		ShortURL:    fmt.Sprintf("%s/%s", host, id),
 	}
 	storage.Links = append(storage.Links, link)
