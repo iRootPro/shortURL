@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,6 +14,14 @@ import (
 )
 
 const host = "http://localhost:8080"
+
+type RequestPOST struct {
+	Url string `json:"url"`
+}
+
+type ResponsePOST struct {
+	Result string `json:"result"`
+}
 
 func GetURL(c echo.Context) error {
 	id := c.Param("hash")
@@ -45,4 +54,31 @@ func PostURL(c echo.Context) error {
 	}
 	storage.Links = append(storage.Links, link)
 	return c.String(http.StatusCreated, link.ShortURL)
+}
+
+func PostURLJSON(c echo.Context) error {
+	var request RequestPOST
+
+	if err := c.Bind(&request); err != nil {
+		return c.String(http.StatusInternalServerError, "")
+	}
+
+	id := usecases.GenerateShortLink([]byte(request.Url))
+	link := storage.LinkEntity{
+		ID:          id,
+		OriginalURL: request.Url,
+		ShortURL:    fmt.Sprintf("%s/%s", host, id),
+	}
+	storage.Links = append(storage.Links, link)
+
+	response := &ResponsePOST{
+		Result: link.ShortURL,
+	}
+
+	_, err := json.Marshal(response)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "")
+	}
+
+	return c.JSON(http.StatusCreated, response)
 }

@@ -15,6 +15,7 @@ func main() {
 	e.Use(middleware.Logger())
 	e.GET("/:hash", handlers.GetURL)
 	e.POST("/", handlers.PostURL)
+  e.POST("/api/shorten", handlers.PostURLJSON)
 	if err := e.Start(":8080"); err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
