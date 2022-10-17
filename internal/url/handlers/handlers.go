@@ -13,8 +13,6 @@ import (
 	"github.com/irootpro/shorturl/internal/url/usecases"
 )
 
-const host = "http://localhost:8080"
-
 type RequestPOST struct {
 	URL string `json:"url"`
 }
@@ -50,7 +48,7 @@ func PostURL(c echo.Context) error {
 	link := storage.LinkEntity{
 		ID:          id,
 		OriginalURL: string(body),
-		ShortURL:    fmt.Sprintf("%s/%s", host, id),
+		ShortURL:    fmt.Sprintf("%s/%s", service.BaseURL(), id),
 	}
 	storage.Links = append(storage.Links, link)
 	return c.String(http.StatusCreated, link.ShortURL)
@@ -67,7 +65,7 @@ func PostURLJSON(c echo.Context) error {
 	link := storage.LinkEntity{
 		ID:          id,
 		OriginalURL: request.URL,
-		ShortURL:    fmt.Sprintf("%s/%s", host, id),
+		ShortURL:    fmt.Sprintf("%s/%s", service.BaseURL(), id),
 	}
 	storage.Links = append(storage.Links, link)
 
