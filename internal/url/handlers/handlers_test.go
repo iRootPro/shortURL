@@ -164,7 +164,9 @@ func TestLink(t *testing.T) {
 			requestPost.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			w := httptest.NewRecorder()
 			c := e.NewContext(requestPost, w)
+
 			defer requestPost.Body.Close()
+
 			assert.NoError(t, PostURLJSON(c))
 			assert.Equal(t, test.statusCode, w.Result().StatusCode)
 
