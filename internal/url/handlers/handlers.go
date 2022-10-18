@@ -27,12 +27,24 @@ func GetURL(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "id not found on postRequest")
 	}
 
-	shortURL, err := service.ShortURLByID(storage.Links, id)
+	storageFile := service.FileStorageEnv()
+	if storageFile == "" {
+		shortURL, err := service.ShortURLByID(storage.Links, id)
+		if err != nil {
+			return c.String(http.StatusNotFound, err.Error())
+		}
+
+		c.Response().Header().Set("Location", shortURL)
+		return c.String(http.StatusTemporaryRedirect, "")
+	}
+
+	shortUrl, err := storage.ShortLinkById(storageFile, id)
+
 	if err != nil {
 		return c.String(http.StatusNotFound, err.Error())
 	}
 
-	c.Response().Header().Set("Location", shortURL)
+	c.Response().Header().Set("Location", shortUrl)
 	return c.String(http.StatusTemporaryRedirect, "")
 
 }
@@ -67,7 +79,15 @@ func PostURLJSON(c echo.Context) error {
 		OriginalURL: request.URL,
 		ShortURL:    fmt.Sprintf("%s/%s", service.BaseURL(), id),
 	}
-	storage.Links = append(storage.Links, link)
+
+	storageFile := service.FileStorageEnv()
+	if storageFile == "" {
+		storage.Links = append(storage.Links, link)
+	} else {
+		if err := storage.SaveLinkFile(storageFile, link); err != nil {
+			return c.String(http.StatusInternalServerError, err.Error())
+		}
+	}
 
 	response := &ResponsePOST{
 		Result: link.ShortURL,

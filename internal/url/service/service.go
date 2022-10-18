@@ -25,3 +25,7 @@ func BaseURL() string {
 
 	return host
 }
+
+func FileStorageEnv() string {
+	return os.Getenv("FILE_STORAGE_PATH")
+}
