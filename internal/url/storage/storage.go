@@ -48,7 +48,7 @@ func SaveLinkFile(filename string, newLink LinkEntity) error {
 	return nil
 }
 
-func ShortLinkById(filename string, id string) (string, error) {
+func ShortLinkByID(filename string, id string) (string, error) {
 	file, err := os.OpenFile(filename, os.O_RDONLY, 0777)
 	if err != nil {
 		return "", fmt.Errorf("open file, %s", err.Error())

@@ -38,7 +38,7 @@ func GetURL(c echo.Context) error {
 		return c.String(http.StatusTemporaryRedirect, "")
 	}
 
-	shortURL, err := storage.ShortLinkById(storageFile, id)
+	shortURL, err := storage.ShortLinkByID(storageFile, id)
 
 	if err != nil {
 		return c.String(http.StatusNotFound, err.Error())
