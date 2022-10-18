@@ -68,7 +68,7 @@ func ShortLinkByID(filename string, id string) (string, error) {
 
 	for _, v := range links {
 		if v.ID == id {
-			return v.ShortURL, nil
+			return v.OriginalURL, nil
 		}
 	}
 
