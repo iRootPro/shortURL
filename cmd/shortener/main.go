@@ -19,7 +19,7 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.GET("/:hash", handlers.GetURL)
-	e.POST("/", handlers.PostURL)
+	e.POST("/", handlers.PostURLJSON)
 	e.POST("/api/shorten", handlers.PostURLJSON)
 	if err := e.Start(serverAddress); err != http.ErrServerClosed {
 		log.Fatal(err)
