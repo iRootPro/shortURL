@@ -38,13 +38,13 @@ func GetURL(c echo.Context) error {
 		return c.String(http.StatusTemporaryRedirect, "")
 	}
 
-	shortUrl, err := storage.ShortLinkById(storageFile, id)
+	shortURL, err := storage.ShortLinkById(storageFile, id)
 
 	if err != nil {
 		return c.String(http.StatusNotFound, err.Error())
 	}
 
-	c.Response().Header().Set("Location", shortUrl)
+	c.Response().Header().Set("Location", shortURL)
 	return c.String(http.StatusTemporaryRedirect, "")
 
 }
