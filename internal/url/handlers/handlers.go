@@ -27,7 +27,7 @@ func GetURL(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "id not found on postRequest")
 	}
 
-	storageFile := service.FileStorageEnv()
+	storageFile := service.FileStoragePath()
 	if storageFile == "" {
 		shortURL, err := service.ShortURLByID(storage.Links, id)
 		if err != nil {
@@ -63,7 +63,7 @@ func PostURL(c echo.Context) error {
 		ShortURL:    fmt.Sprintf("%s/%s", service.BaseURL(), id),
 	}
 
-	storageFile := service.FileStorageEnv()
+	storageFile := service.FileStoragePath()
 	if storageFile == "" {
 		storage.Links = append(storage.Links, link)
 	} else {
@@ -89,7 +89,7 @@ func PostURLJSON(c echo.Context) error {
 		ShortURL:    fmt.Sprintf("%s/%s", service.BaseURL(), id),
 	}
 
-	storageFile := service.FileStorageEnv()
+	storageFile := service.FileStoragePath()
 	if storageFile == "" {
 		storage.Links = append(storage.Links, link)
 	} else {
