@@ -19,6 +19,7 @@ func main() {
 
 	e := echo.New()
 	e.Use(middleware.Logger())
+	e.Use(middleware.Gzip())
 	e.GET("/:hash", getURLHandler.GetURL)
 	e.POST("/", postURLHandler.PostURL)
 	e.POST("/api/shorten", postURLJSONHandler.PostURLJSON)
