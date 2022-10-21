@@ -21,13 +21,43 @@ type ResponsePOST struct {
 	Result string `json:"result"`
 }
 
-func GetURL(c echo.Context) error {
+type GetURLHandler struct {
+	cfg *service.ConfigVars
+}
+
+type PostURLHandler struct {
+	cfg *service.ConfigVars
+}
+
+type PostURLJSONHandler struct {
+	cfg *service.ConfigVars
+}
+
+func NewGetURLHandler(cfg *service.ConfigVars) *GetURLHandler {
+	return &GetURLHandler{
+		cfg: cfg,
+	}
+}
+
+func NewPostURLHandler(cfg *service.ConfigVars) *PostURLHandler {
+	return &PostURLHandler{
+		cfg: cfg,
+	}
+}
+
+func NewPostURLJSONHandler(cfg *service.ConfigVars) *PostURLJSONHandler {
+	return &PostURLJSONHandler{
+		cfg: cfg,
+	}
+}
+
+func (h *GetURLHandler) GetURL(c echo.Context) error {
 	id := c.Param("hash")
 	if id == "" {
 		return c.String(http.StatusBadRequest, "id not found on postRequest")
 	}
 
-	storageFile := service.FileStoragePath()
+	storageFile := h.cfg.StoragePath
 	if storageFile == "" {
 		shortURL, err := service.ShortURLByID(storage.Links, id)
 		if err != nil {
@@ -49,7 +79,7 @@ func GetURL(c echo.Context) error {
 
 }
 
-func PostURL(c echo.Context) error {
+func (h *PostURLHandler) PostURL(c echo.Context) error {
 	defer c.Request().Body.Close()
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil || string(body) == "" {
@@ -60,10 +90,11 @@ func PostURL(c echo.Context) error {
 	link := storage.LinkEntity{
 		ID:          id,
 		OriginalURL: string(body),
-		ShortURL:    fmt.Sprintf("%s/%s", service.BaseURL(), id),
+		ShortURL:    fmt.Sprintf("%s/%s", h.cfg.BaseURL, id),
 	}
 
-	storageFile := service.FileStoragePath()
+	storageFile := h.cfg.StoragePath
+
 	if storageFile == "" {
 		storage.Links = append(storage.Links, link)
 	} else {
@@ -75,7 +106,7 @@ func PostURL(c echo.Context) error {
 	return c.String(http.StatusCreated, link.ShortURL)
 }
 
-func PostURLJSON(c echo.Context) error {
+func (h *PostURLJSONHandler) PostURLJSON(c echo.Context) error {
 	var request RequestPOST
 
 	if err := c.Bind(&request); err != nil {
@@ -86,10 +117,11 @@ func PostURLJSON(c echo.Context) error {
 	link := storage.LinkEntity{
 		ID:          id,
 		OriginalURL: request.URL,
-		ShortURL:    fmt.Sprintf("%s/%s", service.BaseURL(), id),
+		ShortURL:    fmt.Sprintf("%s/%s", h.cfg.BaseURL, id),
 	}
 
-	storageFile := service.FileStoragePath()
+	storageFile := h.cfg.StoragePath
+
 	if storageFile == "" {
 		storage.Links = append(storage.Links, link)
 	} else {

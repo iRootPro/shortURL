@@ -1,9 +1,10 @@
 package service
 
 import (
+	"flag"
 	"fmt"
 	"os"
-  "flag"
+
 	"github.com/irootpro/shorturl/internal/url/storage"
 )
 
@@ -17,35 +18,48 @@ func ShortURLByID(links []storage.LinkEntity, id string) (string, error) {
 	return "", fmt.Errorf("link not found")
 }
 
-func BaseURL() string {
-	host := os.Getenv("BASE_URL")
-  if host != "" {
-    return host
-  }
-
-  baseURLFlag := flag.String("b", "", "Enter base url with port, example: http://localhost:8080")
-  flag.Parse()
-
-  if *baseURLFlag != "" {
-    return *baseURLFlag
-  }
-	
-  return "http://localhost:8080"
+type ConfigVars struct {
+	SrvAddr     string
+	BaseURL     string
+	StoragePath string
 }
 
-func FileStoragePath() string {
-  path := os.Getenv("FILE_STORAGE_PATH")
-  if path != "" {
-    return path
-  }
+func SetVars() *ConfigVars {
+	serverAddress := flag.String("a", "", "Input server address")
+	baseURL := flag.String("b", "", "Input base url")
+	fileStoragePath := flag.String("f", "", "Input file storage path")
+	flag.Parse()
 
-  pathFlag := flag.String("f", "", "Enter path to file storage")
-  flag.Parse()
+	if *serverAddress == "" {
+		*serverAddress = "localhost:8080"
+	}
 
-  if *pathFlag != "" {
-    return *pathFlag
-  }
+	if *baseURL == "" {
+		*baseURL = "http://localhost:8080"
+	}
 
-  return ""
+	if *fileStoragePath == "" {
+		*fileStoragePath = ""
+	}
 
+	envSrvAddr := os.Getenv("SERVER_ADDRESS")
+	if envSrvAddr != "" {
+		*serverAddress = envSrvAddr
+	}
+
+	envBaseURL := os.Getenv("BASE_URL")
+	if envBaseURL != "" {
+		*baseURL = envBaseURL
+	}
+
+	envFileStorage := os.Getenv("FILE_STORAGE_PATH")
+	if envFileStorage != "" {
+		*fileStoragePath = envFileStorage
+	}
+
+	return &ConfigVars{
+		SrvAddr:     *serverAddress,
+		BaseURL:     *baseURL,
+		StoragePath: *fileStoragePath,
+	}
 }

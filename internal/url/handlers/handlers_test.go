@@ -10,9 +10,15 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/irootpro/shorturl/internal/url/service"
 )
 
 func TestLink(t *testing.T) {
+	cfg := service.SetVars()
+	getURLHandler := NewGetURLHandler(cfg)
+	postURLHandler := NewPostURLHandler(cfg)
+	postURLJSONHandler := NewPostURLJSONHandler(cfg)
 	testsPositive := []struct {
 		name          string
 		originalURL   string
@@ -102,7 +108,7 @@ func TestLink(t *testing.T) {
 			w := httptest.NewRecorder()
 			c := e.NewContext(requestPost, w)
 
-			assert.NoError(t, PostURL(c))
+			assert.NoError(t, postURLHandler.PostURL(c))
 
 			result := w.Result()
 
@@ -122,7 +128,7 @@ func TestLink(t *testing.T) {
 			c.SetParamNames("hash")
 			c.SetParamValues(test.hashShortURL)
 
-			assert.NoError(t, GetURL(c))
+			assert.NoError(t, getURLHandler.GetURL(c))
 
 			result = w.Result()
 			defer result.Body.Close()
@@ -141,7 +147,7 @@ func TestLink(t *testing.T) {
 			c.SetParamNames("hash")
 			c.SetParamValues(test.getRequest)
 
-			assert.NoError(t, GetURL(c))
+			assert.NoError(t, getURLHandler.GetURL(c))
 
 			result := w.Result()
 
@@ -165,7 +171,7 @@ func TestLink(t *testing.T) {
 			w := httptest.NewRecorder()
 			c := e.NewContext(requestPost, w)
 
-			if assert.NoError(t, PostURLJSON(c)) {
+			if assert.NoError(t, postURLJSONHandler.PostURLJSON(c)) {
 				result := w.Result()
 				defer result.Body.Close()
 				assert.Equal(t, test.statusCode, result.StatusCode)
