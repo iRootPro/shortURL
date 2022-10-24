@@ -69,7 +69,6 @@ func (h *GetURLHandler) GetURL(c echo.Context) error {
 	}
 
 	shortURL, err := storage.ShortLinkByID(storageFile, id)
-
 	if err != nil {
 		return c.String(http.StatusNotFound, err.Error())
 	}

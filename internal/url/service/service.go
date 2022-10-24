@@ -25,41 +25,44 @@ type ConfigVars struct {
 }
 
 func SetVars() *ConfigVars {
-	serverAddress := flag.String("a", "", "Input server address")
-	baseURL := flag.String("b", "", "Input base url")
-	fileStoragePath := flag.String("f", "", "Input file storage path")
+	var (
+		serverAddress, baseURL, fileStoragePath string
+	)
+	flag.StringVar(&serverAddress, "a", "", "Input server address")
+	flag.StringVar(&baseURL, "b", "", "Input base url")
+	flag.StringVar(&fileStoragePath, "f", "", "Input file storage path")
 	flag.Parse()
 
-	if *serverAddress == "" {
-		*serverAddress = "localhost:8080"
+	if serverAddress == "" {
+		serverAddress = "localhost:8080"
 	}
 
-	if *baseURL == "" {
-		*baseURL = "http://localhost:8080"
+	if baseURL == "" {
+		baseURL = "http://localhost:8080"
 	}
 
-	if *fileStoragePath == "" {
-		*fileStoragePath = ""
+	if fileStoragePath == "" {
+		fileStoragePath = ""
 	}
 
 	envSrvAddr := os.Getenv("SERVER_ADDRESS")
 	if envSrvAddr != "" {
-		*serverAddress = envSrvAddr
+		serverAddress = envSrvAddr
 	}
 
 	envBaseURL := os.Getenv("BASE_URL")
 	if envBaseURL != "" {
-		*baseURL = envBaseURL
+		baseURL = envBaseURL
 	}
 
 	envFileStorage := os.Getenv("FILE_STORAGE_PATH")
 	if envFileStorage != "" {
-		*fileStoragePath = envFileStorage
+		fileStoragePath = envFileStorage
 	}
 
 	return &ConfigVars{
-		SrvAddr:     *serverAddress,
-		BaseURL:     *baseURL,
-		StoragePath: *fileStoragePath,
+		SrvAddr:     serverAddress,
+		BaseURL:     baseURL,
+		StoragePath: fileStoragePath,
 	}
 }
