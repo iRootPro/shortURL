@@ -12,13 +12,21 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/irootpro/shorturl/internal/url/service"
+	"github.com/irootpro/shorturl/internal/url/storage"
 )
 
 func TestLink(t *testing.T) {
 	cfg := service.SetVars()
-	getURLHandler := NewGetURLHandler(cfg)
-	postURLHandler := NewPostURLHandler(cfg)
-	postURLJSONHandler := NewPostURLJSONHandler(cfg)
+	var storageApp Storage
+
+	if cfg.StoragePath == "" {
+		storageApp = storage.NewStorageMemory()
+	} else {
+		storageApp = storage.NewStorageFile(cfg.StoragePath)
+	}
+
+	serverHandler := NewServerHandler(cfg, storageApp)
+
 	testsPositive := []struct {
 		name          string
 		originalURL   string
@@ -108,7 +116,7 @@ func TestLink(t *testing.T) {
 			w := httptest.NewRecorder()
 			c := e.NewContext(requestPost, w)
 
-			assert.NoError(t, postURLHandler.PostURL(c))
+			assert.NoError(t, serverHandler.PostURL(c))
 
 			result := w.Result()
 
@@ -128,7 +136,7 @@ func TestLink(t *testing.T) {
 			c.SetParamNames("hash")
 			c.SetParamValues(test.hashShortURL)
 
-			assert.NoError(t, getURLHandler.GetURL(c))
+			assert.NoError(t, serverHandler.GetURL(c))
 
 			result = w.Result()
 			defer result.Body.Close()
@@ -147,7 +155,7 @@ func TestLink(t *testing.T) {
 			c.SetParamNames("hash")
 			c.SetParamValues(test.getRequest)
 
-			assert.NoError(t, getURLHandler.GetURL(c))
+			assert.NoError(t, serverHandler.GetURL(c))
 
 			result := w.Result()
 
@@ -171,7 +179,7 @@ func TestLink(t *testing.T) {
 			w := httptest.NewRecorder()
 			c := e.NewContext(requestPost, w)
 
-			if assert.NoError(t, postURLJSONHandler.PostURLJSON(c)) {
+			if assert.NoError(t, serverHandler.PostURLJSON(c)) {
 				result := w.Result()
 				defer result.Body.Close()
 				assert.Equal(t, test.statusCode, result.StatusCode)

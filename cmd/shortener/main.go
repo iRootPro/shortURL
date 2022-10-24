@@ -13,17 +13,16 @@ import (
 
 func main() {
 	cfg := service.SetVars()
-	getURLHandler := handlers.NewGetURLHandler(cfg)
-	postURLHandler := handlers.NewPostURLHandler(cfg)
-	postURLJSONHandler := handlers.NewPostURLJSONHandler(cfg)
+	storage := InitStorage(cfg)
+	serverHandler := handlers.NewServerHandler(cfg, storage)
 
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Gzip())
 	e.Use(middleware.Decompress())
-	e.GET("/:hash", getURLHandler.GetURL)
-	e.POST("/", postURLHandler.PostURL)
-	e.POST("/api/shorten", postURLJSONHandler.PostURLJSON)
+	e.GET("/:hash", serverHandler.GetURL)
+	e.POST("/", serverHandler.PostURL)
+	e.POST("/api/shorten", serverHandler.PostURLJSON)
 	if err := e.Start(cfg.SrvAddr); err != http.ErrServerClosed {
 		log.Fatal(err)
 	}

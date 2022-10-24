@@ -21,54 +21,41 @@ type ResponsePOST struct {
 	Result string `json:"result"`
 }
 
-type GetURLHandler struct {
-	cfg *service.ConfigVars
+type ServerHandler struct {
+	cfg     *service.ConfigVars
+	storage Storage
 }
 
-type PostURLHandler struct {
-	cfg *service.ConfigVars
-}
-
-type PostURLJSONHandler struct {
-	cfg *service.ConfigVars
-}
-
-func NewGetURLHandler(cfg *service.ConfigVars) *GetURLHandler {
-	return &GetURLHandler{
-		cfg: cfg,
+func NewServerHandler(cfg *service.ConfigVars, storage Storage) *ServerHandler {
+	return &ServerHandler{
+		cfg:     cfg,
+		storage: storage,
 	}
 }
 
-func NewPostURLHandler(cfg *service.ConfigVars) *PostURLHandler {
-	return &PostURLHandler{
-		cfg: cfg,
-	}
+type Storage interface {
+	Put(newLink storage.LinkEntity) error
+	Get(id string) (string, error)
 }
 
-func NewPostURLJSONHandler(cfg *service.ConfigVars) *PostURLJSONHandler {
-	return &PostURLJSONHandler{
-		cfg: cfg,
-	}
-}
-
-func (h *GetURLHandler) GetURL(c echo.Context) error {
+func (h *ServerHandler) GetURL(c echo.Context) error {
 	id := c.Param("hash")
 	if id == "" {
 		return c.String(http.StatusBadRequest, "id not found on postRequest")
 	}
 
-	storageFile := h.cfg.StoragePath
-	if storageFile == "" {
-		shortURL, err := service.ShortURLByID(storage.Links, id)
-		if err != nil {
-			return c.String(http.StatusNotFound, err.Error())
-		}
+	//storageFile := h.cfg.StoragePath
+	//if storageFile == "" {
+	//	shortURL, err := service.ShortURLByID(storage.Links, id)
+	//	if err != nil {
+	//		return c.String(http.StatusNotFound, err.Error())
+	//	}
+	//
+	//	c.Response().Header().Set("Location", shortURL)
+	//	return c.String(http.StatusTemporaryRedirect, "")
+	//}
 
-		c.Response().Header().Set("Location", shortURL)
-		return c.String(http.StatusTemporaryRedirect, "")
-	}
-
-	shortURL, err := storage.ShortLinkByID(storageFile, id)
+	shortURL, err := h.storage.Get(id)
 	if err != nil {
 		return c.String(http.StatusNotFound, err.Error())
 	}
@@ -78,7 +65,7 @@ func (h *GetURLHandler) GetURL(c echo.Context) error {
 
 }
 
-func (h *PostURLHandler) PostURL(c echo.Context) error {
+func (h *ServerHandler) PostURL(c echo.Context) error {
 	defer c.Request().Body.Close()
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil || string(body) == "" {
@@ -92,20 +79,20 @@ func (h *PostURLHandler) PostURL(c echo.Context) error {
 		ShortURL:    fmt.Sprintf("%s/%s", h.cfg.BaseURL, id),
 	}
 
-	storageFile := h.cfg.StoragePath
-
-	if storageFile == "" {
-		storage.Links = append(storage.Links, link)
-	} else {
-		if err := storage.SaveLinkFile(storageFile, link); err != nil {
-			return c.String(http.StatusInternalServerError, err.Error())
-		}
+	//storageFile := h.cfg.StoragePath
+	//
+	//if storageFile == "" {
+	//	storage.Links = append(storage.Links, link)
+	//	return c.String(http.StatusCreated, link.ShortURL)
+	//}
+	if err := h.storage.Put(link); err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.String(http.StatusCreated, link.ShortURL)
 }
 
-func (h *PostURLJSONHandler) PostURLJSON(c echo.Context) error {
+func (h *ServerHandler) PostURLJSON(c echo.Context) error {
 	var request RequestPOST
 
 	if err := c.Bind(&request); err != nil {
@@ -119,15 +106,19 @@ func (h *PostURLJSONHandler) PostURLJSON(c echo.Context) error {
 		ShortURL:    fmt.Sprintf("%s/%s", h.cfg.BaseURL, id),
 	}
 
-	storageFile := h.cfg.StoragePath
-
-	if storageFile == "" {
-		storage.Links = append(storage.Links, link)
-	} else {
-		if err := storage.SaveLinkFile(storageFile, link); err != nil {
-			return c.String(http.StatusInternalServerError, err.Error())
-		}
+	if err := h.storage.Put(link); err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
+
+	//storageFile := h.cfg.StoragePath
+	//
+	//if storageFile == "" {
+	//	storage.Links = append(storage.Links, link)
+	//} else {
+	//	if err := storage.Put(storageFile, link); err != nil {
+	//		return c.String(http.StatusInternalServerError, err.Error())
+	//	}
+	//}
 
 	response := &ResponsePOST{
 		Result: link.ShortURL,

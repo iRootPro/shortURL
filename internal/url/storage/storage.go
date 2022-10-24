@@ -14,10 +14,28 @@ type LinkEntity struct {
 	ShortURL    string `json:"short_url"`
 }
 
-var Links []LinkEntity
+type StorageFile struct {
+	filename string
+}
 
-func SaveLinkFile(filename string, newLink LinkEntity) error {
-	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0777)
+type StorageMemory struct {
+	links []LinkEntity
+}
+
+func NewStorageFile(filename string) *StorageFile {
+	return &StorageFile{
+		filename: filename,
+	}
+}
+
+func NewStorageMemory() *StorageMemory {
+	return &StorageMemory{
+		links: []LinkEntity{},
+	}
+}
+
+func (s *StorageFile) Put(newLink LinkEntity) error {
+	file, err := os.OpenFile(s.filename, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return fmt.Errorf("file open: %s", err.Error())
 	}
@@ -27,20 +45,23 @@ func SaveLinkFile(filename string, newLink LinkEntity) error {
 	if err != nil {
 		return fmt.Errorf("read from file: %s", err)
 	}
+
+	var links []LinkEntity
+
 	if len(fileBuffer) != 0 {
-		if err = json.Unmarshal(fileBuffer, &Links); err != nil {
+		if err = json.Unmarshal(fileBuffer, &links); err != nil {
 			return fmt.Errorf("unmarshaling: %s", err.Error())
 		}
 	}
 
-	Links = append(Links, newLink)
+	links = append(links, newLink)
 
-	bytes, err := json.MarshalIndent(Links, "", "\t")
+	bytes, err := json.MarshalIndent(links, "", "\t")
 	if err != nil {
 		return fmt.Errorf("marshaling: %s", err.Error())
 	}
 
-	err = os.WriteFile(filename, bytes, 0644)
+	err = os.WriteFile(s.filename, bytes, 0644)
 	if err != nil {
 		return fmt.Errorf("write file: %s", err.Error())
 	}
@@ -48,8 +69,8 @@ func SaveLinkFile(filename string, newLink LinkEntity) error {
 	return nil
 }
 
-func ShortLinkByID(filename string, id string) (string, error) {
-	file, err := os.OpenFile(filename, os.O_RDONLY, 0777)
+func (s *StorageFile) Get(id string) (string, error) {
+	file, err := os.OpenFile(s.filename, os.O_RDONLY, 0644)
 	if err != nil {
 		return "", fmt.Errorf("open file, %s", err.Error())
 	}
@@ -73,4 +94,19 @@ func ShortLinkByID(filename string, id string) (string, error) {
 	}
 
 	return "", errors.New("link not found")
+}
+
+func (s *StorageMemory) Put(link LinkEntity) error {
+	s.links = append(s.links, link)
+	return nil
+}
+
+func (s *StorageMemory) Get(id string) (string, error) {
+	for _, v := range s.links {
+		if v.ID == id {
+			return v.OriginalURL, nil
+		}
+	}
+
+	return "", fmt.Errorf("link not found")
 }
