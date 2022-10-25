@@ -17,6 +17,7 @@ import (
 
 func TestLink(t *testing.T) {
 	cfg := service.SetVars()
+
 	var storageApp Storage
 
 	if cfg.StoragePath == "" {

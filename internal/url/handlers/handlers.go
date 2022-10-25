@@ -36,6 +36,7 @@ func NewServerHandler(cfg *service.ConfigVars, storage Storage) *ServerHandler {
 type Storage interface {
 	Put(newLink storage.LinkEntity) error
 	Get(id string) (string, error)
+	Close()
 }
 
 func (h *ServerHandler) GetURL(c echo.Context) error {
@@ -44,17 +45,6 @@ func (h *ServerHandler) GetURL(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "id not found on postRequest")
 	}
 
-	//storageFile := h.cfg.StoragePath
-	//if storageFile == "" {
-	//	shortURL, err := service.ShortURLByID(storage.Links, id)
-	//	if err != nil {
-	//		return c.String(http.StatusNotFound, err.Error())
-	//	}
-	//
-	//	c.Response().Header().Set("Location", shortURL)
-	//	return c.String(http.StatusTemporaryRedirect, "")
-	//}
-
 	shortURL, err := h.storage.Get(id)
 	if err != nil {
 		return c.String(http.StatusNotFound, err.Error())
@@ -62,7 +52,6 @@ func (h *ServerHandler) GetURL(c echo.Context) error {
 
 	c.Response().Header().Set("Location", shortURL)
 	return c.String(http.StatusTemporaryRedirect, "")
-
 }
 
 func (h *ServerHandler) PostURL(c echo.Context) error {
@@ -79,12 +68,6 @@ func (h *ServerHandler) PostURL(c echo.Context) error {
 		ShortURL:    fmt.Sprintf("%s/%s", h.cfg.BaseURL, id),
 	}
 
-	//storageFile := h.cfg.StoragePath
-	//
-	//if storageFile == "" {
-	//	storage.Links = append(storage.Links, link)
-	//	return c.String(http.StatusCreated, link.ShortURL)
-	//}
 	if err := h.storage.Put(link); err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -109,16 +92,6 @@ func (h *ServerHandler) PostURLJSON(c echo.Context) error {
 	if err := h.storage.Put(link); err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-
-	//storageFile := h.cfg.StoragePath
-	//
-	//if storageFile == "" {
-	//	storage.Links = append(storage.Links, link)
-	//} else {
-	//	if err := storage.Put(storageFile, link); err != nil {
-	//		return c.String(http.StatusInternalServerError, err.Error())
-	//	}
-	//}
 
 	response := &ResponsePOST{
 		Result: link.ShortURL,

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 )
 
@@ -15,7 +16,7 @@ type LinkEntity struct {
 }
 
 type StorageFile struct {
-	filename string
+	file *os.File
 }
 
 type StorageMemory struct {
@@ -23,8 +24,12 @@ type StorageMemory struct {
 }
 
 func NewStorageFile(filename string) *StorageFile {
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		log.Fatalf("file open: %s", err.Error())
+	}
 	return &StorageFile{
-		filename: filename,
+		file: file,
 	}
 }
 
@@ -35,13 +40,7 @@ func NewStorageMemory() *StorageMemory {
 }
 
 func (s *StorageFile) Put(newLink LinkEntity) error {
-	file, err := os.OpenFile(s.filename, os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		return fmt.Errorf("file open: %s", err.Error())
-	}
-	defer file.Close()
-
-	fileBuffer, err := io.ReadAll(file)
+	fileBuffer, err := io.ReadAll(s.file)
 	if err != nil {
 		return fmt.Errorf("read from file: %s", err)
 	}
@@ -61,7 +60,7 @@ func (s *StorageFile) Put(newLink LinkEntity) error {
 		return fmt.Errorf("marshaling: %s", err.Error())
 	}
 
-	err = os.WriteFile(s.filename, bytes, 0644)
+	_, err = s.file.Write(bytes)
 	if err != nil {
 		return fmt.Errorf("write file: %s", err.Error())
 	}
@@ -70,13 +69,8 @@ func (s *StorageFile) Put(newLink LinkEntity) error {
 }
 
 func (s *StorageFile) Get(id string) (string, error) {
-	file, err := os.OpenFile(s.filename, os.O_RDONLY, 0644)
-	if err != nil {
-		return "", fmt.Errorf("open file, %s", err.Error())
-	}
-	defer file.Close()
 
-	fileBuff, err := io.ReadAll(file)
+	fileBuff, err := io.ReadAll(s.file)
 	if err != nil {
 		return "", fmt.Errorf("read file, %s", err.Error())
 	}
@@ -96,6 +90,13 @@ func (s *StorageFile) Get(id string) (string, error) {
 	return "", errors.New("link not found")
 }
 
+func (s *StorageFile) Close() {
+	err := s.file.Close()
+	if err != nil {
+		return
+	}
+}
+
 func (s *StorageMemory) Put(link LinkEntity) error {
 	s.links = append(s.links, link)
 	return nil
@@ -109,4 +110,8 @@ func (s *StorageMemory) Get(id string) (string, error) {
 	}
 
 	return "", fmt.Errorf("link not found")
+}
+
+func (s *StorageMemory) Close() {
+	s.links = []LinkEntity{}
 }

@@ -14,6 +14,7 @@ import (
 func main() {
 	cfg := service.SetVars()
 	storage := InitStorage(cfg)
+	defer storage.Close()
 	serverHandler := handlers.NewServerHandler(cfg, storage)
 
 	e := echo.New()
