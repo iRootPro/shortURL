@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -23,7 +24,12 @@ func TestLink(t *testing.T) {
 	if cfg.StoragePath == "" {
 		storageApp = storage.NewStorageMemory()
 	} else {
-		storageApp = storage.NewStorageFile(cfg.StoragePath)
+    storage, err := storage.NewStorageFile(cfg.StoragePath)
+    if err != nil {
+      log.Fatal("create storage from test")
+    }
+
+    storageApp = storage
 	}
 
 	serverHandler := NewServerHandler(cfg, storageApp)

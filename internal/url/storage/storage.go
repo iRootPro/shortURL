@@ -17,20 +17,35 @@ type LinkEntity struct {
 
 type StorageFile struct {
 	file *os.File
+  cache []LinkEntity
 }
 
 type StorageMemory struct {
 	links []LinkEntity
 }
 
-func NewStorageFile(filename string) *StorageFile {
+func NewStorageFile(filename string) (*StorageFile, error) {
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatalf("file open: %s", err.Error())
 	}
+
+  fileBuff, err := io.ReadAll(file)
+  if err != nil {
+    log.Fatal("read from file:", err)
+  }
+
+	var links []LinkEntity
+
+	if len(fileBuff) != 0 {
+		if err = json.Unmarshal(fileBuff, &links); err != nil {
+			return nil, fmt.Errorf("unmarshaling: %s", err.Error())
+		}
+	}
 	return &StorageFile{
 		file: file,
-	}
+    cache: links,
+	}, nil
 }
 
 func NewStorageMemory() *StorageMemory {
@@ -40,48 +55,14 @@ func NewStorageMemory() *StorageMemory {
 }
 
 func (s *StorageFile) Put(newLink LinkEntity) error {
-	fileBuffer, err := io.ReadAll(s.file)
-	if err != nil {
-		return fmt.Errorf("read from file: %s", err)
-	}
-
-	var links []LinkEntity
-
-	if len(fileBuffer) != 0 {
-		if err = json.Unmarshal(fileBuffer, &links); err != nil {
-			return fmt.Errorf("unmarshaling: %s", err.Error())
-		}
-	}
-
-	links = append(links, newLink)
-
-	bytes, err := json.MarshalIndent(links, "", "\t")
-	if err != nil {
-		return fmt.Errorf("marshaling: %s", err.Error())
-	}
-
-	_, err = s.file.Write(bytes)
-	if err != nil {
-		return fmt.Errorf("write file: %s", err.Error())
-	}
-
+  s.cache = append(s.cache, newLink)
 	return nil
 }
 
 func (s *StorageFile) Get(id string) (string, error) {
-
-	fileBuff, err := io.ReadAll(s.file)
-	if err != nil {
-		return "", fmt.Errorf("read file, %s", err.Error())
-	}
-
-	var links []LinkEntity
-	err = json.Unmarshal(fileBuff, &links)
-	if err != nil {
-		return "", fmt.Errorf("unmarshaling: %s", err.Error())
-	}
-
-	for _, v := range links {
+  fmt.Print("cache")
+  fmt.Print(s.cache)
+	for _, v := range s.cache {
 		if v.ID == id {
 			return v.OriginalURL, nil
 		}
@@ -90,11 +71,19 @@ func (s *StorageFile) Get(id string) (string, error) {
 	return "", errors.New("link not found")
 }
 
-func (s *StorageFile) Close() {
-	err := s.file.Close()
+func (s *StorageFile) Close() error {
+  fmt.Println("write to file")
+  var bytes = make([]byte, 0)
+  _, err := s.file.Write(bytes)
+  if err != nil {
+    return fmt.Errorf("write to file, when close file description: %s ", err.Error())
+  }
+	err = s.file.Close()
 	if err != nil {
-		return
+    return fmt.Errorf("close file descriptor: %s", err.Error())
 	}
+
+  return nil
 }
 
 func (s *StorageMemory) Put(link LinkEntity) error {
@@ -112,6 +101,7 @@ func (s *StorageMemory) Get(id string) (string, error) {
 	return "", fmt.Errorf("link not found")
 }
 
-func (s *StorageMemory) Close() {
+func (s *StorageMemory) Close() error {
 	s.links = []LinkEntity{}
+  return nil
 }

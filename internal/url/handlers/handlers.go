@@ -36,7 +36,7 @@ func NewServerHandler(cfg *service.ConfigVars, storage Storage) *ServerHandler {
 type Storage interface {
 	Put(newLink storage.LinkEntity) error
 	Get(id string) (string, error)
-	Close()
+	Close() error
 }
 
 func (h *ServerHandler) GetURL(c echo.Context) error {
