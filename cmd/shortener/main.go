@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -14,7 +19,7 @@ import (
 func main() {
 	cfg := service.SetVars()
 	storage := InitStorage(cfg)
-	defer storage.Close()
+
 	serverHandler := handlers.NewServerHandler(cfg, storage)
 
 	e := echo.New()
@@ -24,7 +29,20 @@ func main() {
 	e.GET("/:hash", serverHandler.GetURL)
 	e.POST("/", serverHandler.PostURL)
 	e.POST("/api/shorten", serverHandler.PostURLJSON)
-	if err := e.Start(cfg.SrvAddr); err != http.ErrServerClosed {
-		log.Fatal(err)
+	go func() {
+		if err := e.Start(cfg.SrvAddr); err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+  defer storage.Close()
+  defer fmt.Println("Server shutdown")
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
 	}
 }

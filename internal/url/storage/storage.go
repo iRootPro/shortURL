@@ -72,9 +72,15 @@ func (s *StorageFile) Get(id string) (string, error) {
 }
 
 func (s *StorageFile) Close() error {
-  fmt.Println("write to file")
-  var bytes = make([]byte, 0)
-  _, err := s.file.Write(bytes)
+  fmt.Println("Save data to file")
+
+  bytes, err := json.Marshal(s.cache)
+
+  if err != nil {
+    return fmt.Errorf("marshaling: %s", err.Error())
+  }
+
+  _, err = s.file.Write(bytes)
   if err != nil {
     return fmt.Errorf("write to file, when close file description: %s ", err.Error())
   }
