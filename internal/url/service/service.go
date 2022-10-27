@@ -66,3 +66,4 @@ func SetVars() *ConfigVars {
 		StoragePath: fileStoragePath,
 	}
 }
+

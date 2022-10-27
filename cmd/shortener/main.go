@@ -12,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
+	appMiddlewares "github.com/irootpro/shorturl/internal/middlewares"
 	"github.com/irootpro/shorturl/internal/url/handlers"
 	"github.com/irootpro/shorturl/internal/url/service"
 )
@@ -26,9 +27,12 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Gzip())
 	e.Use(middleware.Decompress())
+  e.Use(appMiddlewares.CoockieHash)
+  
 	e.GET("/:hash", serverHandler.GetURL)
 	e.POST("/", serverHandler.PostURL)
 	e.POST("/api/shorten", serverHandler.PostURLJSON)
+	e.GET("/api/user/urls", serverHandler.GetURLs)
 	go func() {
 		if err := e.Start(cfg.SrvAddr); err != http.ErrServerClosed {
 			log.Fatal(err)
@@ -40,8 +44,8 @@ func main() {
 	<-quit
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-  defer storage.Close()
-  defer fmt.Println("Server shutdown")
+	defer storage.Close()
+	defer fmt.Println("Server shutdown")
 	if err := e.Shutdown(ctx); err != nil {
 		e.Logger.Fatal(err)
 	}

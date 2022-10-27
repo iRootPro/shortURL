@@ -10,7 +10,7 @@ import (
 )
 
 type LinkEntity struct {
-	ID          string `json:"id"`
+  ID          string `json:"-"`
 	OriginalURL string `json:"original_url"`
 	ShortURL    string `json:"short_url"`
 }
@@ -72,6 +72,10 @@ func (s *StorageFile) Get(id string) (string, error) {
 	return "", errors.New("link not found")
 }
 
+func (s *StorageFile) GetAll() ([]LinkEntity, error) {
+  return s.memory.links, nil
+}
+
 func (s *StorageFile) Close() error {
   fmt.Println("Save data to file")
 
@@ -106,6 +110,10 @@ func (s *StorageMemory) Get(id string) (string, error) {
 	}
 
 	return "", fmt.Errorf("link not found")
+}
+
+func (s *StorageMemory) GetAll() ([]LinkEntity, error) {
+  return s.links, nil
 }
 
 func (s *StorageMemory) Close() error {

@@ -36,6 +36,7 @@ func NewServerHandler(cfg *service.ConfigVars, storage Storage) *ServerHandler {
 type Storage interface {
 	Put(newLink storage.LinkEntity) error
 	Get(id string) (string, error)
+	GetAll() ([]storage.LinkEntity, error)
 	Close() error
 }
 
@@ -52,6 +53,24 @@ func (h *ServerHandler) GetURL(c echo.Context) error {
 
 	c.Response().Header().Set("Location", shortURL)
 	return c.String(http.StatusTemporaryRedirect, "")
+}
+
+func (h *ServerHandler) GetURLs(c echo.Context) error {
+	urls, err := h.storage.GetAll()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "error read from storage")
+	}
+
+  if len(urls) == 0 {
+    return c.String(http.StatusNoContent, "")
+  }
+
+	bytes, err := json.Marshal(urls)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "error marhaling data")
+	}
+
+	return c.JSONBlob(http.StatusOK, bytes)
 }
 
 func (h *ServerHandler) PostURL(c echo.Context) error {
