@@ -186,12 +186,12 @@ func TestLink(t *testing.T) {
 			w := httptest.NewRecorder()
 			c := e.NewContext(requestPost, w)
 
-			if assert.NoError(t, serverHandler.PostURLJSON(c)) {
-				result := w.Result()
-				defer result.Body.Close()
-				assert.Equal(t, test.statusCode, result.StatusCode)
-				assert.JSONEq(t, test.response, w.Body.String())
-			}
+      err := serverHandler.PostURLJSON(c)
+      assert.NoError(t, err)
+			result := w.Result()
+			defer result.Body.Close()
+			assert.Equal(t, test.statusCode, result.StatusCode)
+			assert.JSONEq(t, test.response, w.Body.String())
 
 		})
 	}

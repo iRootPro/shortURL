@@ -17,7 +17,7 @@ type LinkEntity struct {
 
 type StorageFile struct {
 	file *os.File
-  cache []LinkEntity
+  memory StorageMemory 
 }
 
 type StorageMemory struct {
@@ -42,9 +42,11 @@ func NewStorageFile(filename string) (*StorageFile, error) {
 			return nil, fmt.Errorf("unmarshaling: %s", err.Error())
 		}
 	}
+
+  memory := NewStorageMemory()
 	return &StorageFile{
 		file: file,
-    cache: links,
+    memory: *memory,
 	}, nil
 }
 
@@ -55,14 +57,13 @@ func NewStorageMemory() *StorageMemory {
 }
 
 func (s *StorageFile) Put(newLink LinkEntity) error {
-  s.cache = append(s.cache, newLink)
+  s.memory.links= append(s.memory.links, newLink)
 	return nil
 }
 
 func (s *StorageFile) Get(id string) (string, error) {
-  fmt.Print("cache")
-  fmt.Print(s.cache)
-	for _, v := range s.cache {
+  fmt.Print(s.memory.links)
+	for _, v := range s.memory.links {
 		if v.ID == id {
 			return v.OriginalURL, nil
 		}
@@ -74,7 +75,7 @@ func (s *StorageFile) Get(id string) (string, error) {
 func (s *StorageFile) Close() error {
   fmt.Println("Save data to file")
 
-  bytes, err := json.Marshal(s.cache)
+  bytes, err := json.Marshal(s.memory.links)
 
   if err != nil {
     return fmt.Errorf("marshaling: %s", err.Error())
