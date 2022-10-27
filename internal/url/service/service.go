@@ -1,7 +1,9 @@
 package service
 
 import (
+	"flag"
 	"fmt"
+	"os"
 
 	"github.com/irootpro/shorturl/internal/url/storage"
 )
@@ -14,4 +16,53 @@ func ShortURLByID(links []storage.LinkEntity, id string) (string, error) {
 	}
 
 	return "", fmt.Errorf("link not found")
+}
+
+type ConfigVars struct {
+	SrvAddr     string
+	BaseURL     string
+	StoragePath string
+}
+
+func SetVars() *ConfigVars {
+	var (
+		serverAddress, baseURL, fileStoragePath string
+	)
+	flag.StringVar(&serverAddress, "a", "", "Input server address")
+	flag.StringVar(&baseURL, "b", "", "Input base url")
+	flag.StringVar(&fileStoragePath, "f", "", "Input file storage path")
+	flag.Parse()
+
+	if serverAddress == "" {
+		serverAddress = "localhost:8080"
+	}
+
+	if baseURL == "" {
+		baseURL = "http://localhost:8080"
+	}
+
+	if fileStoragePath == "" {
+		fileStoragePath = ""
+	}
+
+	envSrvAddr := os.Getenv("SERVER_ADDRESS")
+	if envSrvAddr != "" {
+		serverAddress = envSrvAddr
+	}
+
+	envBaseURL := os.Getenv("BASE_URL")
+	if envBaseURL != "" {
+		baseURL = envBaseURL
+	}
+
+	envFileStorage := os.Getenv("FILE_STORAGE_PATH")
+	if envFileStorage != "" {
+		fileStoragePath = envFileStorage
+	}
+
+	return &ConfigVars{
+		SrvAddr:     serverAddress,
+		BaseURL:     baseURL,
+		StoragePath: fileStoragePath,
+	}
 }

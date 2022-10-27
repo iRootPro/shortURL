@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -10,9 +11,29 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/irootpro/shorturl/internal/url/service"
+	"github.com/irootpro/shorturl/internal/url/storage"
 )
 
 func TestLink(t *testing.T) {
+	cfg := service.SetVars()
+
+	var storageApp Storage
+
+	if cfg.StoragePath == "" {
+		storageApp = storage.NewStorageMemory()
+	} else {
+    storage, err := storage.NewStorageFile(cfg.StoragePath)
+    if err != nil {
+      log.Fatal("create storage from test")
+    }
+
+    storageApp = storage
+	}
+
+	serverHandler := NewServerHandler(cfg, storageApp)
+
 	testsPositive := []struct {
 		name          string
 		originalURL   string
@@ -73,6 +94,27 @@ func TestLink(t *testing.T) {
 			error:         "id not found on postRequest",
 		},
 	}
+
+	testsPOSTJOSN := []struct {
+		name       string
+		statusCode int
+		request    string
+		response   string
+	}{
+		{
+			name:       "POSTURL with json body google.com",
+			statusCode: http.StatusCreated,
+			request:    `{"url":"http://google.com"}`,
+			response:   `{"result":"http://localhost:8080/aHR0cDovL2dvb2dsZS5jb20="}`,
+		},
+		{
+			name:       "POSTURL with json body amazon.com",
+			statusCode: http.StatusCreated,
+			request:    `{"url":"http://amazon.com"}`,
+			response:   `{"result":"http://localhost:8080/aHR0cDovL2FtYXpvbi5jb20="}`,
+		},
+	}
+
 	for _, test := range testsPositive {
 		t.Run(test.name, func(t *testing.T) {
 			e := echo.New()
@@ -81,7 +123,7 @@ func TestLink(t *testing.T) {
 			w := httptest.NewRecorder()
 			c := e.NewContext(requestPost, w)
 
-			assert.NoError(t, PostURL(c))
+			assert.NoError(t, serverHandler.PostURL(c))
 
 			result := w.Result()
 
@@ -101,7 +143,7 @@ func TestLink(t *testing.T) {
 			c.SetParamNames("hash")
 			c.SetParamValues(test.hashShortURL)
 
-			assert.NoError(t, GetURL(c))
+			assert.NoError(t, serverHandler.GetURL(c))
 
 			result = w.Result()
 			defer result.Body.Close()
@@ -120,7 +162,7 @@ func TestLink(t *testing.T) {
 			c.SetParamNames("hash")
 			c.SetParamValues(test.getRequest)
 
-			assert.NoError(t, GetURL(c))
+			assert.NoError(t, serverHandler.GetURL(c))
 
 			result := w.Result()
 
@@ -132,6 +174,25 @@ func TestLink(t *testing.T) {
 			err = result.Body.Close()
 			require.NoError(t, err)
 			assert.Equal(t, test.error, string(responseBody))
+		})
+	}
+
+	for _, test := range testsPOSTJOSN {
+		t.Run(test.name, func(t *testing.T) {
+			e := echo.New()
+			bodyReader := strings.NewReader(test.request)
+			requestPost := httptest.NewRequest(http.MethodPost, "/api/shorten", bodyReader)
+			requestPost.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			w := httptest.NewRecorder()
+			c := e.NewContext(requestPost, w)
+
+      err := serverHandler.PostURLJSON(c)
+      assert.NoError(t, err)
+			result := w.Result()
+			defer result.Body.Close()
+			assert.Equal(t, test.statusCode, result.StatusCode)
+			assert.JSONEq(t, test.response, w.Body.String())
+
 		})
 	}
 }
