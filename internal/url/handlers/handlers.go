@@ -56,14 +56,24 @@ func (h *ServerHandler) GetURL(c echo.Context) error {
 }
 
 func (h *ServerHandler) GetURLs(c echo.Context) error {
+	coockie, err := c.Cookie("token")
+	if err != nil || !service.CheckCookie(coockie) {
+		c.Response().Header().Set("Content-Type", "application/json")
+		c.Response().WriteHeader(http.StatusNoContent)
+		return nil
+	}
+
+  c.SetCookie(coockie)
 	urls, err := h.storage.GetAll()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "error read from storage")
 	}
 
-  if len(urls) == 0 {
-    return c.String(http.StatusNoContent, "")
-  }
+	if len(urls) == 0 {
+    c.Response().Header().Set("Content-Type", "application/json")
+    c.Response().WriteHeader(http.StatusNoContent)
+    return nil
+	}
 
 	bytes, err := json.Marshal(urls)
 	if err != nil {

@@ -12,7 +12,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	appMiddlewares "github.com/irootpro/shorturl/internal/middlewares"
 	"github.com/irootpro/shorturl/internal/url/handlers"
 	"github.com/irootpro/shorturl/internal/url/service"
 )
@@ -27,7 +26,6 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Gzip())
 	e.Use(middleware.Decompress())
-  e.Use(appMiddlewares.CoockieHash)
   
 	e.GET("/:hash", serverHandler.GetURL)
 	e.POST("/", serverHandler.PostURL)
