@@ -63,16 +63,16 @@ func (h *ServerHandler) GetURLs(c echo.Context) error {
 		return nil
 	}
 
-  c.SetCookie(coockie)
+	c.SetCookie(coockie)
 	urls, err := h.storage.GetAll()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "error read from storage")
 	}
 
 	if len(urls) == 0 {
-    c.Response().Header().Set("Content-Type", "application/json")
-    c.Response().WriteHeader(http.StatusNoContent)
-    return nil
+		c.Response().Header().Set("Content-Type", "application/json")
+		c.Response().WriteHeader(http.StatusNoContent)
+		return nil
 	}
 
 	bytes, err := json.Marshal(urls)
@@ -84,6 +84,13 @@ func (h *ServerHandler) GetURLs(c echo.Context) error {
 }
 
 func (h *ServerHandler) PostURL(c echo.Context) error {
+  cookie, err := c.Cookie("token")
+	if err != nil || service.CheckCookie(cookie) {
+		cookie = service.SetCookie()
+	}
+
+  c.SetCookie(cookie)
+
 	defer c.Request().Body.Close()
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil || string(body) == "" {
@@ -105,7 +112,14 @@ func (h *ServerHandler) PostURL(c echo.Context) error {
 }
 
 func (h *ServerHandler) PostURLJSON(c echo.Context) error {
-	var request RequestPOST
+  cookie, err := c.Cookie("token")
+	if err != nil || service.CheckCookie(cookie) {
+		cookie = service.SetCookie()
+	}
+
+  c.SetCookie(cookie)
+
+  var request RequestPOST
 
 	if err := c.Bind(&request); err != nil {
 		return c.String(http.StatusInternalServerError, "")
@@ -126,7 +140,7 @@ func (h *ServerHandler) PostURLJSON(c echo.Context) error {
 		Result: link.ShortURL,
 	}
 
-	_, err := json.Marshal(response)
+	_, err = json.Marshal(response)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "")
 	}
