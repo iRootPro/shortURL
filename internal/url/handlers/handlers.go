@@ -38,6 +38,7 @@ type Storage interface {
 	Get(id string) (string, error)
 	GetAll() ([]storage.LinkEntity, error)
 	Close() error
+	Ping() error
 }
 
 func (h *ServerHandler) GetURL(c echo.Context) error {
@@ -84,12 +85,12 @@ func (h *ServerHandler) GetURLs(c echo.Context) error {
 }
 
 func (h *ServerHandler) PostURL(c echo.Context) error {
-  cookie, err := c.Cookie("token")
+	cookie, err := c.Cookie("token")
 	if err != nil || service.CheckCookie(cookie) {
 		cookie = service.SetCookie()
 	}
 
-  c.SetCookie(cookie)
+	c.SetCookie(cookie)
 
 	defer c.Request().Body.Close()
 	body, err := io.ReadAll(c.Request().Body)
@@ -112,14 +113,14 @@ func (h *ServerHandler) PostURL(c echo.Context) error {
 }
 
 func (h *ServerHandler) PostURLJSON(c echo.Context) error {
-  cookie, err := c.Cookie("token")
+	cookie, err := c.Cookie("token")
 	if err != nil || service.CheckCookie(cookie) {
 		cookie = service.SetCookie()
 	}
 
-  c.SetCookie(cookie)
+	c.SetCookie(cookie)
 
-  var request RequestPOST
+	var request RequestPOST
 
 	if err := c.Bind(&request); err != nil {
 		return c.String(http.StatusInternalServerError, "")
@@ -146,4 +147,14 @@ func (h *ServerHandler) PostURLJSON(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, response)
+}
+
+func (h *ServerHandler) Ping(c echo.Context) error {
+	c.Response().Header().Set("Content-Type", "application/json")
+	if err := h.storage.Ping(); err != nil {
+		c.Response().WriteHeader(http.StatusInternalServerError)
+		return nil
+	}
+	c.Response().WriteHeader(http.StatusOK)
+	return nil
 }

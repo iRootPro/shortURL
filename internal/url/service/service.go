@@ -22,15 +22,15 @@ type ConfigVars struct {
 	SrvAddr     string
 	BaseURL     string
 	StoragePath string
+	DSN         string
 }
 
 func SetVars() *ConfigVars {
-	var (
-		serverAddress, baseURL, fileStoragePath string
-	)
+	var serverAddress, baseURL, fileStoragePath, databaseDSNString string
 	flag.StringVar(&serverAddress, "a", "", "Input server address")
 	flag.StringVar(&baseURL, "b", "", "Input base url")
 	flag.StringVar(&fileStoragePath, "f", "", "Input file storage path")
+	flag.StringVar(&databaseDSNString, "d", "", "Input DSN for connetd to datbase")
 	flag.Parse()
 
 	if serverAddress == "" {
@@ -60,10 +60,15 @@ func SetVars() *ConfigVars {
 		fileStoragePath = envFileStorage
 	}
 
+  envDatabaseDSN := os.Getenv("DATABASE_DSN")
+  if envDatabaseDSN != "" {
+    databaseDSNString = envDatabaseDSN
+  }
+
 	return &ConfigVars{
 		SrvAddr:     serverAddress,
 		BaseURL:     baseURL,
 		StoragePath: fileStoragePath,
+		DSN:         databaseDSNString,
 	}
 }
-

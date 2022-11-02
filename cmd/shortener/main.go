@@ -31,6 +31,7 @@ func main() {
 	e.POST("/", serverHandler.PostURL)
 	e.POST("/api/shorten", serverHandler.PostURLJSON)
 	e.GET("/api/user/urls", serverHandler.GetURLs)
+	e.GET("/ping", serverHandler.Ping)
 	go func() {
 		if err := e.Start(cfg.SrvAddr); err != http.ErrServerClosed {
 			log.Fatal(err)
