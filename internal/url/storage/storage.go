@@ -183,6 +183,9 @@ func (s *StorageDB) GetAll() ([]LinkEntity, error) {
 		return []LinkEntity{}, fmt.Errorf("get all urls: %s", err.Error())
 	}
 
+  if err = rows.Err(); err != nil {
+    return []LinkEntity{}, fmt.Errorf("row scan: %s", err.Error())
+  }
 	defer rows.Close()
 
 	var links []LinkEntity
