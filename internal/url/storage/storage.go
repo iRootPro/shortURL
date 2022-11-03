@@ -159,7 +159,6 @@ func (s *StorageDB) GetAll() ([]LinkEntity, error) {
 }
 
 func (s *StorageDB) Close() error {
-	s.Close()
   return nil
 }
 
@@ -167,6 +166,8 @@ func (s *StorageDB) Ping() error {
 	if err := s.db.Ping(); err != nil {
     return fmt.Errorf("connect to database failed: %s", err.Error())
 	}
+
+  fmt.Println("Ping to database successful, connection is still alive")
 
 	return nil
 }
