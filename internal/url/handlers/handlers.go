@@ -67,6 +67,7 @@ func (h *ServerHandler) GetURLs(c echo.Context) error {
 	c.SetCookie(coockie)
 	urls, err := h.storage.GetAll()
 	if err != nil {
+    fmt.Printf("read urls from storage: %s", err.Error())
 		return c.String(http.StatusInternalServerError, "error read from storage")
 	}
 

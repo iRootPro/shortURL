@@ -178,7 +178,22 @@ func (s *StorageDB) Get(id string) (string, error) {
 }
 
 func (s *StorageDB) GetAll() ([]LinkEntity, error) {
-	return []LinkEntity{}, nil
+	rows, err := s.db.Query("SELECT * from links")
+	if err != nil {
+		return []LinkEntity{}, fmt.Errorf("get all urls: %s", err.Error())
+	}
+
+	defer rows.Close()
+
+	var links []LinkEntity
+	for rows.Next() {
+		var link LinkEntity
+		if err := rows.Scan(&link.ID, &link.OriginalURL, &link.ShortURL); err != nil {
+			return links, fmt.Errorf("row scan: %s", err.Error())
+		}
+		links = append(links, link)
+	}
+	return links, nil
 }
 
 func (s *StorageDB) Close() error {
