@@ -152,6 +152,7 @@ func (h *ServerHandler) PostURLJSON(c echo.Context) error {
 func (h *ServerHandler) Ping(c echo.Context) error {
 	c.Response().Header().Set("Content-Type", "application/json")
 	if err := h.storage.Ping(); err != nil {
+    fmt.Println("err", err.Error())
 		c.Response().WriteHeader(http.StatusInternalServerError)
 		return nil
 	}

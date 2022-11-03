@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -10,7 +9,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/jackc/pgx/v5"
+	_ "github.com/lib/pq"
 )
 
 type LinkEntity struct {
@@ -29,7 +28,7 @@ type StorageMemory struct {
 }
 
 type StorageDB struct {
-	db *pgx.Conn
+	db *sql.DB
 }
 
 func NewStorageFile(filename string) (*StorageFile, error) {
@@ -65,12 +64,11 @@ func NewStorageMemory() *StorageMemory {
 }
 
 func NewStorageDB(dsn string) *StorageDB {
-  db,err := pgx.Connect(context.Background(),dsn)
-  if err != nil {
-    log.Fatalf("connect to data base: %s", err.Error())
-  }
-	defer db.Close(context.Background())
-  fmt.Println("Connected to database")
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		log.Fatalf("connect to data base: %s", err.Error())
+	}
+	fmt.Println("Connected to database")
 	return &StorageDB{
 		db: db,
 	}
@@ -161,12 +159,13 @@ func (s *StorageDB) GetAll() ([]LinkEntity, error) {
 }
 
 func (s *StorageDB) Close() error {
+  defer s.Close()
 	return nil
 }
 
 func (s *StorageDB) Ping() error {
-	if err := s.db.Ping(context.Background()); err != nil {
-		return fmt.Errorf("ping time out")
+	if err := s.db.Ping(); err != nil {
+    return fmt.Errorf("connect to database failed: %s", err.Error())
 	}
 
 	return nil
