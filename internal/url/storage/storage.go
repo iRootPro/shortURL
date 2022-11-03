@@ -68,7 +68,14 @@ func NewStorageDB(dsn string) *StorageDB {
 	if err != nil {
 		log.Fatalf("connect to data base: %s", err.Error())
 	}
-	fmt.Println("Connected to database")
+
+	_, err = db.Exec(
+		"CREATE TABLE IF NOT EXISTS links (hash_url TEXT NOT NULL, original_url TEXT NOT NULL, short_url TEXT NOT NULL)",
+	)
+	if err != nil {
+		log.Fatalf("create database: %s", err.Error())
+	}
+
 	return &StorageDB{
 		db: db,
 	}
@@ -147,11 +154,21 @@ func (s *StorageMemory) Ping() error {
 }
 
 func (s *StorageDB) Put(link LinkEntity) error {
+	_, err := s.db.Query("INSERT INTO links VALUES ($1, $2, $3)", link.ID, link.OriginalURL, link.ShortURL)
+	if err != nil {
+		return fmt.Errorf("insert into database: %s", err.Error())
+	}
 	return nil
 }
 
 func (s *StorageDB) Get(id string) (string, error) {
-	return "", nil
+	row := s.db.QueryRow("SELECT original_url from links WHERE hash_url=$1", id)
+	var originalURL string
+	if err := row.Scan(&originalURL); err != nil {
+		return "", fmt.Errorf("get url by id: %s", err.Error())
+	}
+
+	return originalURL, nil
 }
 
 func (s *StorageDB) GetAll() ([]LinkEntity, error) {
@@ -159,15 +176,15 @@ func (s *StorageDB) GetAll() ([]LinkEntity, error) {
 }
 
 func (s *StorageDB) Close() error {
-  return nil
+	return nil
 }
 
 func (s *StorageDB) Ping() error {
 	if err := s.db.Ping(); err != nil {
-    return fmt.Errorf("connect to database failed: %s", err.Error())
+		return fmt.Errorf("connect to database failed: %s", err.Error())
 	}
 
-  fmt.Println("Ping to database successful, connection is still alive")
+	fmt.Println("Ping to database successful, connection is still alive")
 
 	return nil
 }

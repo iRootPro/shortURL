@@ -9,7 +9,6 @@ import (
 )
 
 func InitStorage(cfg *service.ConfigVars) handlers.Storage {
-
 	if cfg.DSN != "" {
 		return storage.NewStorageDB(cfg.DSN)
 	}
