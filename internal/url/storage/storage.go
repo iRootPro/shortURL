@@ -154,10 +154,12 @@ func (s *StorageMemory) Ping() error {
 }
 
 func (s *StorageDB) Put(link LinkEntity) error {
-	_, err := s.db.Query("INSERT INTO links VALUES ($1, $2, $3)", link.ID, link.OriginalURL, link.ShortURL)
+	row, err := s.db.Query("INSERT INTO links VALUES ($1, $2, $3)", link.ID, link.OriginalURL, link.ShortURL)
 	if err != nil {
 		return fmt.Errorf("insert into database: %s", err.Error())
 	}
+
+  defer row.Close()
 	return nil
 }
 
