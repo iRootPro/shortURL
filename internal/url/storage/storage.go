@@ -159,8 +159,8 @@ func (s *StorageDB) GetAll() ([]LinkEntity, error) {
 }
 
 func (s *StorageDB) Close() error {
-  defer s.Close()
-	return nil
+	s.Close()
+  return nil
 }
 
 func (s *StorageDB) Ping() error {
