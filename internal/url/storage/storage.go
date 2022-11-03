@@ -159,7 +159,11 @@ func (s *StorageDB) Put(link LinkEntity) error {
 		return fmt.Errorf("insert into database: %s", err.Error())
 	}
 
-  defer row.Close()
+	if err = row.Err(); err != nil {
+		return fmt.Errorf("row err: %s", err.Error())
+	}
+
+	defer row.Close()
 	return nil
 }
 
