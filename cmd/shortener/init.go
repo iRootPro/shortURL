@@ -9,12 +9,13 @@ import (
 )
 
 func InitStorage(cfg *service.ConfigVars) handlers.Storage {
-	if cfg.StoragePath == "" {
-		return storage.NewStorageMemory()
-	}
 
 	if cfg.DSN != "" {
 		return storage.NewStorageDB(cfg.DSN)
+	}
+
+	if cfg.StoragePath == "" {
+		return storage.NewStorageMemory()
 	}
 
 	storageFile, err := storage.NewStorageFile(cfg.StoragePath)

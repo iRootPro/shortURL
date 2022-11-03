@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -69,7 +70,7 @@ func NewStorageDB(dsn string) *StorageDB {
     log.Fatalf("connect to data base: %s", err.Error())
   }
 	defer db.Close(context.Background())
-
+  fmt.Println("Connected to database")
 	return &StorageDB{
 		db: db,
 	}
