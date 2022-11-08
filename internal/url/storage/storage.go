@@ -215,7 +215,7 @@ func (s *StorageDB) Batch(ctx context.Context, links []LinkBatch, baseURL string
 
 	for _, v := range links {
 		short := usecases.GenerateShortLink([]byte(v.OriginalURL))
-		if _, err := stmt.ExecContext(ctx, short, fmt.Sprintf("%s/%s", baseURL, short), v.CorrelationID); err != nil {
+		if _, err := stmt.ExecContext(ctx, short, fmt.Sprintf("%s/%s", baseURL, short), v.OriginalURL, v.CorrelationID); err != nil {
 			return nil, fmt.Errorf("statement exec, %s", err.Error())
 		}
 

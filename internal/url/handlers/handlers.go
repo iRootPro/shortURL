@@ -170,6 +170,7 @@ func (h *ServerHandler) PostURLsBatchJSON(c echo.Context) error {
 	ctx := context.Background()
 	result, err := h.storage.Batch(ctx, request, h.cfg.BaseURL)
 	if err != nil {
+		fmt.Printf("batch request, %s", err.Error())
 		return c.String(http.StatusInternalServerError, "")
 	}
 
