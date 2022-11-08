@@ -24,12 +24,12 @@ func TestLink(t *testing.T) {
 	if cfg.StoragePath == "" {
 		storageApp = storage.NewStorageMemory()
 	} else {
-    storage, err := storage.NewStorageFile(cfg.StoragePath)
-    if err != nil {
-      log.Fatal("create storage from test")
-    }
+		storage, err := storage.NewStorageFile(cfg.StoragePath)
+		if err != nil {
+			log.Fatal("create storage from test")
+		}
 
-    storageApp = storage
+		storageApp = storage
 	}
 
 	serverHandler := NewServerHandler(cfg, storageApp)
@@ -186,8 +186,8 @@ func TestLink(t *testing.T) {
 			w := httptest.NewRecorder()
 			c := e.NewContext(requestPost, w)
 
-      err := serverHandler.PostURLJSON(c)
-      assert.NoError(t, err)
+			err := serverHandler.PostURLJSON(c)
+			assert.NoError(t, err)
 			result := w.Result()
 			defer result.Body.Close()
 			assert.Equal(t, test.statusCode, result.StatusCode)

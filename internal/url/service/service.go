@@ -60,10 +60,10 @@ func SetVars() *ConfigVars {
 		fileStoragePath = envFileStorage
 	}
 
-  envDatabaseDSN := os.Getenv("DATABASE_DSN")
-  if envDatabaseDSN != "" {
-    databaseDSNString = envDatabaseDSN
-  }
+	envDatabaseDSN := os.Getenv("DATABASE_DSN")
+	if envDatabaseDSN != "" {
+		databaseDSNString = envDatabaseDSN
+	}
 
 	return &ConfigVars{
 		SrvAddr:     serverAddress,

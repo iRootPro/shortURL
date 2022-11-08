@@ -1,10 +1,12 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/irootpro/shorturl/internal/url/usecases"
 	"io"
 	"log"
 	"os"
@@ -16,6 +18,16 @@ type LinkEntity struct {
 	ID          string `json:"-"`
 	OriginalURL string `json:"original_url"`
 	ShortURL    string `json:"short_url"`
+}
+
+type LinkBatch struct {
+	CorrelationID string `json:"correlation_id"`
+	OriginalURL   string `json:"original_url"`
+}
+
+type LinkBatchResult struct {
+	CorrelationID string `json:"correlation_id"`
+	ShortURL      string `json:"short_url"`
 }
 
 type StorageFile struct {
@@ -70,7 +82,7 @@ func NewStorageDB(dsn string) *StorageDB {
 	}
 
 	_, err = db.Exec(
-		"CREATE TABLE IF NOT EXISTS links (hash_url TEXT NOT NULL, original_url TEXT NOT NULL, short_url TEXT NOT NULL)",
+		"CREATE TABLE IF NOT EXISTS links (hash_url TEXT NOT NULL, original_url TEXT NOT NULL, short_url TEXT NOT NULL, correlation_id TEXT)",
 	)
 	if err != nil {
 		log.Fatalf("create database: %s", err.Error())
@@ -84,6 +96,14 @@ func NewStorageDB(dsn string) *StorageDB {
 func (s *StorageFile) Put(newLink LinkEntity) error {
 	s.memory.links = append(s.memory.links, newLink)
 	return nil
+}
+
+func (s *StorageMemory) Batch(ctx context.Context, links []LinkBatch, baseURL string) ([]LinkBatchResult, error) {
+	return []LinkBatchResult{}, nil
+}
+
+func (s *StorageFile) Batch(ctx context.Context, links []LinkBatch, baseURL string) ([]LinkBatchResult, error) {
+	return []LinkBatchResult{}, nil
 }
 
 func (s *StorageFile) Get(id string) (string, error) {
@@ -177,15 +197,50 @@ func (s *StorageDB) Get(id string) (string, error) {
 	return originalURL, nil
 }
 
+func (s *StorageDB) Batch(ctx context.Context, links []LinkBatch, baseURL string) ([]LinkBatchResult, error) {
+	result := make([]LinkBatchResult, 0)
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("start transaction, %s", err.Error())
+	}
+
+	defer tx.Rollback()
+
+	stmt, err := s.db.PrepareContext(ctx, "INSERT INTO links(hash_url, short_url, original_url, correlation_id) VALUES ($1, $2, $3, $4)")
+	if err != nil {
+		return nil, fmt.Errorf("prepare statement, %s", err.Error())
+	}
+
+	defer stmt.Close()
+
+	for _, v := range links {
+		short := usecases.GenerateShortLink([]byte(v.OriginalURL))
+		if _, err := stmt.ExecContext(ctx, short, fmt.Sprintf("%s/%s", baseURL, short), v.CorrelationID); err != nil {
+			return nil, fmt.Errorf("statement exec, %s", err.Error())
+		}
+
+		result = append(result, LinkBatchResult{
+			CorrelationID: v.CorrelationID,
+			ShortURL:      fmt.Sprintf("%s/%s", baseURL, short),
+		})
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit, %s", err.Error())
+	}
+
+	return result, nil
+}
+
 func (s *StorageDB) GetAll() ([]LinkEntity, error) {
 	rows, err := s.db.Query("SELECT * from links")
 	if err != nil {
 		return []LinkEntity{}, fmt.Errorf("get all urls: %s", err.Error())
 	}
 
-  if err = rows.Err(); err != nil {
-    return []LinkEntity{}, fmt.Errorf("row scan: %s", err.Error())
-  }
+	if err = rows.Err(); err != nil {
+		return []LinkEntity{}, fmt.Errorf("row scan: %s", err.Error())
+	}
 	defer rows.Close()
 
 	var links []LinkEntity

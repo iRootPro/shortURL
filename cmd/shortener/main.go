@@ -26,10 +26,11 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Gzip())
 	e.Use(middleware.Decompress())
-  
+
 	e.GET("/:hash", serverHandler.GetURL)
 	e.POST("/", serverHandler.PostURL)
 	e.POST("/api/shorten", serverHandler.PostURLJSON)
+	e.POST("/api/shorten/batch", serverHandler.PostURLsBatchJSON)
 	e.GET("/api/user/urls", serverHandler.GetURLs)
 	e.GET("/ping", serverHandler.Ping)
 	go func() {
