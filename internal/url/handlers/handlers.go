@@ -111,6 +111,10 @@ func (h *ServerHandler) PostURL(c echo.Context) error {
 	}
 
 	if err := h.storage.Put(link); err != nil {
+		var notUniqueError *apiError.NotUniqueRecordError
+		if errors.As(err, &notUniqueError) {
+			return c.String(http.StatusConflict, link.ShortURL)
+		}
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
