@@ -178,7 +178,7 @@ func (s *StorageDB) Put(link LinkEntity) error {
 	row, err := s.db.Query("INSERT INTO links VALUES ($1, $2, $3) ON CONFLICT (original_url) DO NOTHING", link.ID, link.OriginalURL, link.ShortURL)
 	if err != nil {
 		return &apiError.NotUniqueRecordError{
-			Url: link.OriginalURL,
+			URL: link.OriginalURL,
 		}
 	}
 
