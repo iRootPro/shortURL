@@ -3,7 +3,9 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	apiError "github.com/irootpro/shorturl/internal/error"
 	"io"
 	"net/http"
 
@@ -137,6 +139,10 @@ func (h *ServerHandler) PostURLJSON(c echo.Context) error {
 	}
 
 	if err := h.storage.Put(link); err != nil {
+		var notUniqueError *apiError.NotUniqueRecordError
+		if errors.As(err, &notUniqueError) {
+			return c.String(http.StatusConflict, notUniqueError.Error())
+		}
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 

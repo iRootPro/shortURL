@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	apiError "github.com/irootpro/shorturl/internal/error"
 	"github.com/irootpro/shorturl/internal/url/usecases"
 	"io"
 	"log"
@@ -174,9 +175,11 @@ func (s *StorageMemory) Ping() error {
 }
 
 func (s *StorageDB) Put(link LinkEntity) error {
-	row, err := s.db.Query("INSERT INTO links VALUES ($1, $2, $3)", link.ID, link.OriginalURL, link.ShortURL)
+	row, err := s.db.Query("INSERT INTO links VALUES ($1, $2, $3) ON CONFLICT (original_url) DO NOTHING", link.ID, link.OriginalURL, link.ShortURL)
 	if err != nil {
-		return fmt.Errorf("insert into database: %s", err.Error())
+		return &apiError.NotUniqueRecordError{
+			Url: link.OriginalURL,
+		}
 	}
 
 	if err = row.Err(); err != nil {
