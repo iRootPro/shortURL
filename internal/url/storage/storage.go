@@ -177,7 +177,6 @@ func (s *StorageMemory) Ping() error {
 func (s *StorageDB) Put(link LinkEntity) error {
 	row, err := s.db.Query("INSERT INTO links VALUES ($1, $2, $3) ", link.ID, link.OriginalURL, link.ShortURL)
 	if err != nil {
-		fmt.Println("ERROR", err.Error())
 		return &apiError.NotUniqueRecordError{
 			URL: link.OriginalURL,
 		}
