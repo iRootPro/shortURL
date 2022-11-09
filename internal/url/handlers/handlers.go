@@ -138,14 +138,6 @@ func (h *ServerHandler) PostURLJSON(c echo.Context) error {
 		ShortURL:    fmt.Sprintf("%s/%s", h.cfg.BaseURL, id),
 	}
 
-	if err := h.storage.Put(link); err != nil {
-		var notUniqueError *apiError.NotUniqueRecordError
-		if errors.As(err, &notUniqueError) {
-			return c.String(http.StatusConflict, link.ShortURL)
-		}
-		return c.String(http.StatusInternalServerError, err.Error())
-	}
-
 	response := &ResponsePOST{
 		Result: link.ShortURL,
 	}
@@ -153,6 +145,14 @@ func (h *ServerHandler) PostURLJSON(c echo.Context) error {
 	_, err = json.Marshal(response)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "")
+	}
+
+	if err := h.storage.Put(link); err != nil {
+		var notUniqueError *apiError.NotUniqueRecordError
+		if errors.As(err, &notUniqueError) {
+			return c.JSON(http.StatusConflict, response)
+		}
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusCreated, response)
