@@ -83,7 +83,7 @@ func NewStorageDB(dsn string) *StorageDB {
 	}
 
 	_, err = db.Exec(
-		"CREATE TABLE IF NOT EXISTS links (hash_url TEXT NOT NULL, original_url TEXT NOT NULL, short_url TEXT NOT NULL, correlation_id TEXT)",
+		"CREATE TABLE IF NOT EXISTS links (hash_url TEXT NOT NULL, original_url TEXT NOT NULL UNIQUE, short_url TEXT NOT NULL, correlation_id TEXT)",
 	)
 	if err != nil {
 		log.Fatalf("create database: %s", err.Error())
@@ -175,8 +175,9 @@ func (s *StorageMemory) Ping() error {
 }
 
 func (s *StorageDB) Put(link LinkEntity) error {
-	row, err := s.db.Query("INSERT INTO links VALUES ($1, $2, $3) ON CONFLICT (original_url) DO NOTHING", link.ID, link.OriginalURL, link.ShortURL)
+	row, err := s.db.Query("INSERT INTO links VALUES ($1, $2, $3) ", link.ID, link.OriginalURL, link.ShortURL)
 	if err != nil {
+		fmt.Println("ERROR", err.Error())
 		return &apiError.NotUniqueRecordError{
 			URL: link.OriginalURL,
 		}
