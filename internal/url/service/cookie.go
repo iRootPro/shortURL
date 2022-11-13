@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var key = []byte("secret key coockie")
+var key = []byte("secret key cookie")
 
 func SetCookie() *http.Cookie {
 	id := uuid.NewString()
@@ -29,8 +29,8 @@ func SetCookie() *http.Cookie {
 	return cookie
 }
 
-func CheckCookie(coockie *http.Cookie) bool {
-	values := strings.Split(coockie.Value, ":")
+func CheckCookie(cookie *http.Cookie) bool {
+	values := strings.Split(cookie.Value, ":")
 
 	data, err := hex.DecodeString(values[1])
 	if err != nil {
