@@ -1,0 +1,11 @@
+POST http://localhost:8080/api/shorten/batch
+Content-Type: application/json
+
+[
+  {
+    "correlation_id": "123",
+    "original_url": "http://google.com"
+  }
+]
+
+###

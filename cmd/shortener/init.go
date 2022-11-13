@@ -9,13 +9,17 @@ import (
 )
 
 func InitStorage(cfg *service.ConfigVars) handlers.Storage {
+	if cfg.DSN != "" {
+		return storage.NewStorageDB(cfg.DSN)
+	}
+
 	if cfg.StoragePath == "" {
 		return storage.NewStorageMemory()
 	}
 
-  storageFile, err := storage.NewStorageFile(cfg.StoragePath)
-  if err != nil {
-    log.Fatal("create sorage file: ", err)
-  }
-  return storageFile
+	storageFile, err := storage.NewStorageFile(cfg.StoragePath)
+	if err != nil {
+		log.Fatal("create sorage file: ", err)
+	}
+	return storageFile
 }

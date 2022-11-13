@@ -26,9 +26,13 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Gzip())
 	e.Use(middleware.Decompress())
+
 	e.GET("/:hash", serverHandler.GetURL)
 	e.POST("/", serverHandler.PostURL)
 	e.POST("/api/shorten", serverHandler.PostURLJSON)
+	e.POST("/api/shorten/batch", serverHandler.PostURLsBatchJSON)
+	e.GET("/api/user/urls", serverHandler.GetURLs)
+	e.GET("/ping", serverHandler.Ping)
 	go func() {
 		if err := e.Start(cfg.SrvAddr); err != http.ErrServerClosed {
 			log.Fatal(err)
@@ -40,8 +44,8 @@ func main() {
 	<-quit
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-  defer storage.Close()
-  defer fmt.Println("Server shutdown")
+	defer storage.Close()
+	defer fmt.Println("Server shutdown")
 	if err := e.Shutdown(ctx); err != nil {
 		e.Logger.Fatal(err)
 	}
