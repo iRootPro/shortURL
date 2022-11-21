@@ -359,7 +359,6 @@ func executer(ctx context.Context, stmt *sql.Stmt, tx *sql.Tx, inputChan <-chan 
 	defer cancel()
 	for id := range inputChan {
 		if _, err := stmt.ExecContext(ctx, id); err != nil {
-			fmt.Println("ERROR", err.Error())
 			if err = tx.Rollback(); err != nil {
 				return fmt.Errorf("rollback, %s", err.Error())
 			}
