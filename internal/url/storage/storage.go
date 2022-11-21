@@ -277,8 +277,6 @@ func (s *StorageDB) RemoveURLs(urls []string) error {
 		return fmt.Errorf("start transaction, %s", err.Error())
 	}
 
-	defer tx.Rollback()
-
 	if len(urls) == 0 {
 		return errors.New("list of URLs is empty")
 	}
@@ -295,9 +293,25 @@ func (s *StorageDB) RemoveURLs(urls []string) error {
 	wg := &sync.WaitGroup{}
 	errCh := make(chan error)
 
-	for _, item := range fanOutsChan {
-		executer(ctx, stmt, tx, item, errCh, wg)
+	urlsChan := make(chan string, len(urls))
+
+	for i := 0; i < 3; i++ {
+		wg.Add(1)
+		go func() error {
+			err = executer(ctx, stmt, tx, urlsChan)
+			if err != nil {
+				wg.Done()
+				return err
+			}
+			wg.Done()
+			return nil
+		}()
 	}
+
+	for _, item := range fanOutsChan {
+		urlsChan <- <-item
+	}
+	close(urlsChan)
 
 	go func() {
 		wg.Wait()
@@ -340,29 +354,17 @@ func fanOut(input []string, n int) []chan string {
 	return chs
 }
 
-func executer(ctx context.Context, stmt *sql.Stmt, tx *sql.Tx, inputChan <-chan string, errChan chan<- error, wg *sync.WaitGroup) {
-	wg.Add(1)
-	var goErr error
-	defer func() {
-		if goErr != nil {
-			select {
-			case errChan <- goErr:
-			case <-ctx.Done():
-				log.Println("cancel deleting")
+func executer(ctx context.Context, stmt *sql.Stmt, tx *sql.Tx, inputChan <-chan string) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	for id := range inputChan {
+		if _, err := stmt.ExecContext(ctx, id); err != nil {
+			fmt.Println("ERROR", err.Error())
+			if err = tx.Rollback(); err != nil {
+				return fmt.Errorf("rollback, %s", err.Error())
 			}
+			return fmt.Errorf("exec, %s", err.Error())
 		}
-		wg.Done()
-	}()
-	go func() {
-		for id := range inputChan {
-			if _, err := stmt.ExecContext(ctx, id); err != nil {
-				if err = tx.Rollback(); err != nil {
-					goErr = err
-					return
-				}
-				goErr = err
-				return
-			}
-		}
-	}()
+	}
+	return nil
 }
