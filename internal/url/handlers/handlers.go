@@ -40,6 +40,7 @@ type Storage interface {
 	Put(newLink storage.LinkEntity) error
 	Get(id string) (string, error)
 	GetAll() ([]storage.LinkEntity, error)
+	RemoveURLs([]string) error
 	Close() error
 	Ping() error
 	Batch(context.Context, []storage.LinkBatch, string) ([]storage.LinkBatchResult, error)
@@ -54,6 +55,10 @@ func (h *ServerHandler) GetURL(c echo.Context) error {
 	shortURL, err := h.storage.Get(id)
 	if err != nil {
 		return c.String(http.StatusNotFound, err.Error())
+	}
+
+	if shortURL == "deleted" {
+		return c.String(http.StatusGone, "")
 	}
 
 	c.Response().Header().Set("Location", shortURL)
@@ -185,6 +190,21 @@ func (h *ServerHandler) PostURLsBatchJSON(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, result)
+}
+
+func (h *ServerHandler) RemoveURLs(c echo.Context) error {
+	var urls []string
+
+	if err := c.Bind(&urls); err != nil {
+		return c.String(http.StatusInternalServerError, "")
+	}
+
+	if err := h.storage.RemoveURLs(urls); err != nil {
+		return c.String(http.StatusInternalServerError, "")
+	}
+
+	return c.String(http.StatusAccepted, "")
+
 }
 
 func (h *ServerHandler) Ping(c echo.Context) error {

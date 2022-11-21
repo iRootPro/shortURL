@@ -32,7 +32,8 @@ func main() {
 	e.POST("/api/shorten", serverHandler.PostURLJSON)
 	e.POST("/api/shorten/batch", serverHandler.PostURLsBatchJSON)
 	e.GET("/api/user/urls", serverHandler.GetURLs)
-	e.GET("/ping", serverHandler.Ping)
+	e.DELETE("/api/user/urls", serverHandler.RemoveURLs)
+  e.GET("/ping", serverHandler.Ping)
 	go func() {
 		if err := e.Start(cfg.SrvAddr); err != http.ErrServerClosed {
 			log.Fatal(err)

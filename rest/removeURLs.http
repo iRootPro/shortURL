@@ -1,0 +1,6 @@
+DELETE http://localhost:8080/api/user/urls
+Content-Type: application/json
+
+["short1", "short2", "short3"]
+
+###
