@@ -351,6 +351,7 @@ func executer(ctx context.Context, stmt *sql.Stmt, tx *sql.Tx, inputChan <-chan 
 				log.Println("cancel deleting")
 			}
 		}
+		wg.Done()
 	}()
 	go func() {
 		for id := range inputChan {

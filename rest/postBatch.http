@@ -4,7 +4,15 @@ Content-Type: application/json
 [
   {
     "correlation_id": "123",
-    "original_url": "http://google.com"
+    "original_url": "http://am123.com"
+  },
+  {
+    "correlation_id": "123",
+    "original_url": "http://am125.com"
+  },
+  {
+    "correlation_id": "123",
+    "original_url": "http://am124.com"
   }
 ]
 
