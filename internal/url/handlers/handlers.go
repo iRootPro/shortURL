@@ -57,10 +57,10 @@ func (h *ServerHandler) GetURL(c echo.Context) error {
 		return c.String(http.StatusNotFound, err.Error())
 	}
 
-	if shortURL == "deleted" {
-		c.Response().WriteHeader(http.StatusGone)
-		return nil
-	}
+	//if shortURL == "deleted" {
+	//	c.Response().WriteHeader(http.StatusGone)
+	//	return nil
+	//}
 
 	c.Response().Header().Set("Location", shortURL)
 	return c.String(http.StatusTemporaryRedirect, "")
