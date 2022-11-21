@@ -58,7 +58,8 @@ func (h *ServerHandler) GetURL(c echo.Context) error {
 	}
 
 	if shortURL == "deleted" {
-		return c.String(http.StatusGone, "")
+		c.Response().WriteHeader(http.StatusGone)
+		return nil
 	}
 
 	c.Response().Header().Set("Location", shortURL)
