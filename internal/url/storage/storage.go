@@ -84,7 +84,7 @@ func NewStorageDB(dsn string) *StorageDB {
 	}
 
 	_, err = db.Exec(
-		"CREATE TABLE IF NOT EXISTS links (hash_url TEXT NOT NULL, original_url TEXT NOT NULL UNIQUE, short_url TEXT NOT NULL, correlation_id TEXT, is_deleted BOOLEAN)",
+		"CREATE TABLE IF NOT EXISTS links (hash_url TEXT NOT NULL, original_url TEXT NOT NULL UNIQUE, short_url TEXT NOT NULL, correlation_id TEXT, is_deleted VARCHAR(10) DEFAULT '')",
 	)
 	if err != nil {
 		log.Fatalf("create database: %s", err.Error())
@@ -202,12 +202,12 @@ func (s *StorageDB) Put(link LinkEntity) error {
 func (s *StorageDB) Get(id string) (string, error) {
 	row := s.db.QueryRow("SELECT original_url, is_deleted from links WHERE hash_url=$1", id)
 	var originalURL string
-	var isDeleted bool
+	var isDeleted string
 	if err := row.Scan(&originalURL, &isDeleted); err != nil {
 		return "", fmt.Errorf("get url by id: %s", err.Error())
 	}
 
-	if isDeleted {
+	if isDeleted == "deleted" {
 		return "deleted", nil
 	}
 
@@ -285,7 +285,7 @@ func (s *StorageDB) RemoveURLs(urls []string) error {
 
 	ctx := context.Background()
 
-	stmt, err := tx.PrepareContext(ctx, "UPDATE links SET is_deleted=true WHERE short_url=$1")
+	stmt, err := tx.PrepareContext(ctx, "UPDATE links SET is_deleted='deleted' WHERE hash_url=$1")
 	if err != nil {
 		return fmt.Errorf("prepare statement, %s", err.Error())
 	}
