@@ -123,7 +123,22 @@ func (s *StorageFile) GetAll() ([]LinkEntity, error) {
 	return s.memory.links, nil
 }
 
-func (s *StorageFile) RemoveURLs([]string) error {
+func (s *StorageFile) RemoveURLs(urls []string) error {
+	if len(urls) == 0 {
+		return nil
+	}
+
+	var afterRemovedLinks []LinkEntity
+	for _, link := range s.memory.links {
+		for _, url := range urls {
+			if link.ShortURL != url {
+				afterRemovedLinks = append(afterRemovedLinks, link)
+			}
+		}
+	}
+
+	s.memory.links = afterRemovedLinks
+
 	return nil
 }
 
@@ -175,7 +190,21 @@ func (s *StorageMemory) Close() error {
 	return nil
 }
 
-func (s *StorageMemory) RemoveURLs([]string) error {
+func (s *StorageMemory) RemoveURLs(urls []string) error {
+	if len(urls) == 0 {
+		return nil
+	}
+
+	var afterRemovedLinks []LinkEntity
+	for _, link := range s.links {
+		for _, url := range urls {
+			if link.ShortURL != url {
+				afterRemovedLinks = append(afterRemovedLinks, link)
+			}
+		}
+	}
+
+	s.links = afterRemovedLinks
 	return nil
 }
 
