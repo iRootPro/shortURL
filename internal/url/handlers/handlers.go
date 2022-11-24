@@ -61,13 +61,18 @@ func (h *ServerHandler) GetURL(c echo.Context) error {
 		return c.String(http.StatusNotFound, "url not found")
 	}
 
+	if shortURL != "deleted" {
+		c.Response().Header().Set("Location", shortURL)
+		return c.String(http.StatusTemporaryRedirect, "")
+	}
+
 	if shortURL == "deleted" {
 		c.Response().WriteHeader(http.StatusGone)
 		return nil
 	}
 
-	c.Response().Header().Set("Location", shortURL)
-	return c.String(http.StatusTemporaryRedirect, "")
+	return nil
+
 }
 
 func (h *ServerHandler) GetURLs(c echo.Context) error {
