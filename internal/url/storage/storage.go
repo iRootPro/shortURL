@@ -389,9 +389,9 @@ func executer(ctx context.Context, stmt *sql.Stmt, tx *sql.Tx, inputChan <-chan 
 	for id := range inputChan {
 		if _, err := stmt.ExecContext(ctx, id); err != nil {
 			if err = tx.Rollback(); err != nil {
-				return fmt.Errorf("rollback, %s", err.Error())
+				return fmt.Errorf("rollback, %w", err)
 			}
-			return fmt.Errorf("exec, %s", err.Error())
+			return fmt.Errorf("exec, %w", err)
 		}
 	}
 	return nil
