@@ -138,9 +138,10 @@ func (s *StorageFile) RemoveURLs(urls []string) error {
 			result = append(result, v)
 		}
 	}
-
+	mu := sync.Mutex{}
+	mu.Lock()
 	s.memory.links = result
-
+	mu.Unlock()
 	return nil
 
 }
