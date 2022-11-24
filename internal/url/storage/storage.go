@@ -190,6 +190,25 @@ func (s *StorageMemory) Close() error {
 }
 
 func (s *StorageMemory) RemoveURLs(urls []string) error {
+	if len(urls) == 0 {
+		return nil
+	}
+
+	m := make(map[string]bool)
+	for _, v := range urls {
+		m[v] = true
+	}
+
+	var result []LinkEntity
+	for _, v := range s.links {
+		if _, ok := m[v.ID]; !ok {
+			result = append(result, v)
+		}
+	}
+
+	fmt.Println("result", result)
+	s.links = result
+
 	return nil
 }
 
