@@ -56,7 +56,7 @@ func (h *ServerHandler) GetURL(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusNotFound, err.Error())
 	}
-
+	fmt.Println("SHORT URL", shortURL)
 	if shortURL == "" {
 		return c.String(http.StatusNotFound, "url not found")
 	}

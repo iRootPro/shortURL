@@ -1,0 +1,14 @@
+POST http://localhost:8080/
+Content-Type: text/plain
+
+###
+
+# curl -X POST -H "Content-Type: text/plain" -d "http://google.com" http://localhost:8080
+POST http://localhost:8080
+Content-Type: text/plain
+
+http://google.com
+
+###
+
+

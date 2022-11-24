@@ -109,7 +109,6 @@ func (s *StorageFile) Batch(ctx context.Context, links []LinkBatch, baseURL stri
 }
 
 func (s *StorageFile) Get(id string) (string, error) {
-	fmt.Print(s.memory.links)
 	for _, v := range s.memory.links {
 		if v.ID == id {
 			return v.OriginalURL, nil
@@ -131,7 +130,7 @@ func (s *StorageFile) RemoveURLs(urls []string) error {
 	var afterRemovedLinks []LinkEntity
 	for _, link := range s.memory.links {
 		for _, url := range urls {
-			if link.ShortURL != url {
+			if link.ID != url {
 				afterRemovedLinks = append(afterRemovedLinks, link)
 			}
 		}
@@ -198,13 +197,14 @@ func (s *StorageMemory) RemoveURLs(urls []string) error {
 	var afterRemovedLinks []LinkEntity
 	for _, link := range s.links {
 		for _, url := range urls {
-			if link.ShortURL != url {
+			if link.ID != url {
 				afterRemovedLinks = append(afterRemovedLinks, link)
 			}
 		}
 	}
 
 	s.links = afterRemovedLinks
+
 	return nil
 }
 
