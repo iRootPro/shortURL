@@ -127,18 +127,22 @@ func (s *StorageFile) RemoveURLs(urls []string) error {
 		return nil
 	}
 
-	var afterRemovedLinks []LinkEntity
-	for _, link := range s.memory.links {
-		for _, url := range urls {
-			if link.ID != url {
-				afterRemovedLinks = append(afterRemovedLinks, link)
-			}
+	m := make(map[string]bool)
+	for _, v := range urls {
+		m[v] = true
+	}
+
+	var result []LinkEntity
+	for _, v := range s.memory.links {
+		if _, ok := m[v.ID]; !ok {
+			result = append(result, v)
 		}
 	}
 
-	s.memory.links = afterRemovedLinks
+	s.memory.links = result
 
 	return nil
+
 }
 
 func (s *StorageFile) Close() error {
@@ -206,7 +210,6 @@ func (s *StorageMemory) RemoveURLs(urls []string) error {
 		}
 	}
 
-	fmt.Println("result", result)
 	s.links = result
 
 	return nil
