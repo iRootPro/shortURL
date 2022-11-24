@@ -20,6 +20,7 @@ type LinkEntity struct {
 	ID          string `json:"-"`
 	OriginalURL string `json:"original_url"`
 	ShortURL    string `json:"short_url"`
+	IsDeleted   string `json:"is_deleted"`
 }
 
 type LinkBatch struct {
@@ -38,7 +39,7 @@ type StorageFile struct {
 }
 
 type StorageMemory struct {
-	sync.RWMutex
+	mu    sync.Mutex
 	links []LinkEntity
 }
 
@@ -124,8 +125,8 @@ func (s *StorageFile) GetAll() ([]LinkEntity, error) {
 }
 
 func (s *StorageFile) RemoveURLs(urls []string) error {
-	s.memory.Lock()
-	defer s.memory.Unlock()
+	s.memory.mu.Lock()
+	defer s.memory.mu.Unlock()
 	if len(urls) == 0 {
 		return nil
 	}
@@ -196,8 +197,8 @@ func (s *StorageMemory) Close() error {
 }
 
 func (s *StorageMemory) RemoveURLs(urls []string) error {
-	s.Lock()
-	defer s.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if len(urls) == 0 {
 		return nil
 	}
