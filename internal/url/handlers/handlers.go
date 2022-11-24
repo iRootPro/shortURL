@@ -54,8 +54,9 @@ func (h *ServerHandler) GetURL(c echo.Context) error {
 
 	shortURL, err := h.storage.Get(id)
 	if err != nil {
-		return c.String(http.StatusNotFound, err.Error())
+		return c.String(http.StatusGone, "")
 	}
+
 	if shortURL == "" {
 		c.Response().WriteHeader(http.StatusGone)
 		return nil
