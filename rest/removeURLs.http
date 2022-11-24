@@ -1,6 +1,6 @@
 DELETE http://localhost:8080/api/user/urls
 Content-Type: application/json
 
-["aHR0cDovL2dvb2dsZS5jb20="]
+["aHR0cDovL2dvb2dsZS5jb20=","aHR0cDovL2dvb2dsZTEuY29t"]
 
 ###
