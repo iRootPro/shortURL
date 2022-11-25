@@ -34,13 +34,13 @@ type LinkBatchResult struct {
 }
 
 type StorageFile struct {
-	mu     sync.Mutex
+	sync.Mutex
 	file   *os.File
 	memory StorageMemory
 }
 
 type StorageMemory struct {
-	mu    sync.Mutex
+	sync.Mutex
 	links []LinkEntity
 }
 
@@ -126,8 +126,8 @@ func (s *StorageFile) GetAll() ([]LinkEntity, error) {
 }
 
 func (s *StorageFile) RemoveURLs(urls []string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.Lock()
+	defer s.Unlock()
 	if len(urls) == 0 {
 		return nil
 	}
@@ -202,8 +202,8 @@ func (s *StorageMemory) Close() error {
 }
 
 func (s *StorageMemory) RemoveURLs(urls []string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.Lock()
+	defer s.Unlock()
 	if len(urls) == 0 {
 		return nil
 	}
