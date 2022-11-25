@@ -39,7 +39,6 @@ type StorageFile struct {
 }
 
 type StorageMemory struct {
-	sync.Mutex
 	links []LinkEntity
 }
 
@@ -125,25 +124,6 @@ func (s *StorageFile) GetAll() ([]LinkEntity, error) {
 }
 
 func (s *StorageFile) RemoveURLs(urls []string) error {
-	s.memory.Lock()
-	defer s.memory.Unlock()
-	if len(urls) == 0 {
-		return nil
-	}
-
-	m := make(map[string]bool)
-	for _, v := range urls {
-		m[v] = true
-	}
-
-	var result []LinkEntity
-	for _, v := range s.memory.links {
-		if _, ok := m[v.ID]; !ok {
-			result = append(result, v)
-		}
-	}
-	s.memory.links = result
-
 	return nil
 
 }
@@ -201,8 +181,6 @@ func (s *StorageMemory) Close() error {
 }
 
 func (s *StorageMemory) RemoveURLs(urls []string) error {
-	s.Lock()
-	defer s.Unlock()
 	if len(urls) == 0 {
 		return nil
 	}
