@@ -180,6 +180,9 @@ func (s *StorageMemory) Put(link LinkEntity) error {
 
 func (s *StorageMemory) Get(id string) (string, error) {
 	for _, v := range s.links {
+		if v.IsDeleted == "deleted" {
+			return "deleted", nil
+		}
 		if v.ID == id {
 			return v.OriginalURL, nil
 		}
@@ -209,14 +212,11 @@ func (s *StorageMemory) RemoveURLs(urls []string) error {
 		m[v] = true
 	}
 
-	var result []LinkEntity
 	for _, v := range s.links {
 		if _, ok := m[v.ID]; !ok {
-			result = append(result, v)
+			v.IsDeleted = "deleted"
 		}
 	}
-
-	s.links = result
 
 	return nil
 }
