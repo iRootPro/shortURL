@@ -34,13 +34,13 @@ type LinkBatchResult struct {
 }
 
 type StorageFile struct {
-	mu     *sync.Mutex
+	mu     sync.Mutex
 	file   *os.File
 	memory StorageMemory
 }
 
 type StorageMemory struct {
-	mu    *sync.Mutex
+	mu    sync.Mutex
 	links []LinkEntity
 }
 
@@ -181,6 +181,7 @@ func (s *StorageMemory) Put(link LinkEntity) error {
 func (s *StorageMemory) Get(id string) (string, error) {
 	for _, v := range s.links {
 		if v.IsDeleted == "deleted" {
+			fmt.Println("DELETED")
 			return "deleted", nil
 		}
 		if v.ID == id {
@@ -212,9 +213,9 @@ func (s *StorageMemory) RemoveURLs(urls []string) error {
 		m[v] = true
 	}
 
-	for _, v := range s.links {
-		if _, ok := m[v.ID]; !ok {
-			v.IsDeleted = "deleted"
+	for i, v := range s.links {
+		if _, ok := m[v.ID]; ok {
+			s.links[i].IsDeleted = "deleted"
 		}
 	}
 
