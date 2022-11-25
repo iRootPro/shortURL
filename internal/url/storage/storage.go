@@ -34,7 +34,6 @@ type LinkBatchResult struct {
 }
 
 type StorageFile struct {
-	sync.Mutex
 	file   *os.File
 	memory StorageMemory
 }
