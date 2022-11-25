@@ -125,8 +125,8 @@ func (s *StorageFile) GetAll() ([]LinkEntity, error) {
 }
 
 func (s *StorageFile) RemoveURLs(urls []string) error {
-	s.Lock()
-	defer s.Unlock()
+	s.memory.Lock()
+	defer s.memory.Unlock()
 	if len(urls) == 0 {
 		return nil
 	}
