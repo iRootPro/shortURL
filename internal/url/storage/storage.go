@@ -40,7 +40,6 @@ type StorageFile struct {
 
 type StorageMemory struct {
 	links []LinkEntity
-	wg    sync.WaitGroup
 }
 
 type StorageDB struct {
