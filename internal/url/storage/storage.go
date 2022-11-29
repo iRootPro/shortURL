@@ -40,10 +40,12 @@ type StorageFile struct {
 
 type StorageMemory struct {
 	links []LinkEntity
+	wg    sync.WaitGroup
 }
 
 type StorageDB struct {
 	db *sql.DB
+	wg sync.WaitGroup
 }
 
 func NewStorageFile(filename string) (*StorageFile, error) {
@@ -311,20 +313,20 @@ func (s *StorageDB) RemoveURLs(ctx context.Context, urls []string) error {
 	defer stmt.Close()
 
 	fanOutsChan := fanOut(urls, len(urls))
-	wg := &sync.WaitGroup{}
+
 	errCh := make(chan error)
 
 	urlsChan := make(chan string, len(urls))
 
 	for i := 0; i < 3; i++ {
-		wg.Add(1)
+		s.wg.Add(1)
 		go func() error {
 			err = executer(ctx, stmt, tx, urlsChan)
 			if err != nil {
-				wg.Done()
+				s.wg.Done()
 				return err
 			}
-			wg.Done()
+			s.wg.Done()
 			return nil
 		}()
 	}
@@ -335,7 +337,7 @@ func (s *StorageDB) RemoveURLs(ctx context.Context, urls []string) error {
 	close(urlsChan)
 
 	go func() {
-		wg.Wait()
+		s.wg.Wait()
 		close(errCh)
 	}()
 
