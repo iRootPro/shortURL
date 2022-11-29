@@ -6,14 +6,12 @@ import (
 	"errors"
 	"fmt"
 	apiError "github.com/irootpro/shorturl/internal/error"
-	"io"
-	"net/http"
-
-	"github.com/labstack/echo/v4"
-
 	"github.com/irootpro/shorturl/internal/url/service"
 	"github.com/irootpro/shorturl/internal/url/storage"
 	"github.com/irootpro/shorturl/internal/url/usecases"
+	"github.com/labstack/echo/v4"
+	"io"
+	"net/http"
 )
 
 type RequestPOST struct {
@@ -54,25 +52,32 @@ func (h *ServerHandler) GetURL(c echo.Context) error {
 
 	shortURL, err := h.storage.Get(id)
 	if err != nil {
-		return c.String(http.StatusNotFound, "link not found")
+		switch {
+		case errors.Is(err, apiError.ErrDeleteLink):
+			c.Response().WriteHeader(http.StatusGone)
+			return nil
+		case errors.Is(err, apiError.ErrLinkNotFound):
+			return c.String(http.StatusNotFound, "link not found")
+		}
+		return c.String(http.StatusInternalServerError, "")
 	}
 
-	if shortURL == "" {
-		c.Response().WriteHeader(http.StatusGone)
-		return nil
-	}
+	//if shortURL == "" {
+	//	c.Response().WriteHeader(http.StatusGone)
+	//	return nil
+	//}
 
-	if shortURL != "deleted" {
-		c.Response().Header().Set("Location", shortURL)
-		return c.String(http.StatusTemporaryRedirect, "")
-	}
+	//if shortURL != "deleted" {
+	c.Response().Header().Set("Location", shortURL)
+	return c.String(http.StatusTemporaryRedirect, "")
+	//}
 
-	if shortURL == "deleted" {
-		c.Response().WriteHeader(http.StatusGone)
-		return nil
-	}
+	//if shortURL == "deleted" {
+	//	c.Response().WriteHeader(http.StatusGone)
+	//	return nil
+	//}
 
-	return nil
+	//return nil
 
 }
 

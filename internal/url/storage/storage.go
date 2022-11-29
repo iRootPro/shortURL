@@ -160,15 +160,14 @@ func (s *StorageMemory) Put(link LinkEntity) error {
 func (s *StorageMemory) Get(id string) (string, error) {
 	for _, v := range s.links {
 		if v.IsDeleted == "deleted" {
-			fmt.Println("DELETED")
-			return "deleted", nil
+			return "", apiError.ErrDeleteLink
 		}
 		if v.ID == id {
 			return v.OriginalURL, nil
 		}
 	}
 
-	return "", fmt.Errorf("link not found")
+	return "", apiError.ErrLinkNotFound
 }
 
 func (s *StorageMemory) GetAll() ([]LinkEntity, error) {
@@ -228,7 +227,11 @@ func (s *StorageDB) Get(id string) (string, error) {
 	}
 
 	if isDeleted == "deleted" {
-		return "deleted", nil
+		return "", apiError.ErrDeleteLink
+	}
+
+	if originalURL == "" {
+		return "", apiError.ErrLinkNotFound
 	}
 
 	return originalURL, nil
