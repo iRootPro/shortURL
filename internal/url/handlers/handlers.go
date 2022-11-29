@@ -12,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"io"
 	"net/http"
+	"time"
 )
 
 type RequestPOST struct {
@@ -38,7 +39,7 @@ type Storage interface {
 	Put(newLink storage.LinkEntity) error
 	Get(id string) (string, error)
 	GetAll() ([]storage.LinkEntity, error)
-	RemoveURLs([]string) error
+	RemoveURLs(context.Context, []string) error
 	Close() error
 	Ping() error
 	Batch(context.Context, []storage.LinkBatch, string) ([]storage.LinkBatchResult, error)
@@ -194,13 +195,17 @@ func (h *ServerHandler) PostURLsBatchJSON(c echo.Context) error {
 }
 
 func (h *ServerHandler) RemoveURLs(c echo.Context) error {
+	ctx := c.Request().Context()
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
 	var urls []string
 
 	if err := c.Bind(&urls); err != nil {
 		return c.String(http.StatusInternalServerError, "")
 	}
 
-	if err := h.storage.RemoveURLs(urls); err != nil {
+	if err := h.storage.RemoveURLs(ctx, urls); err != nil {
 		return c.String(http.StatusInternalServerError, "")
 	}
 

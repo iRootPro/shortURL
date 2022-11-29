@@ -123,7 +123,7 @@ func (s *StorageFile) GetAll() ([]LinkEntity, error) {
 	return s.memory.links, nil
 }
 
-func (s *StorageFile) RemoveURLs(urls []string) error {
+func (s *StorageFile) RemoveURLs(ctx context.Context, urls []string) error {
 	return nil
 
 }
@@ -179,7 +179,7 @@ func (s *StorageMemory) Close() error {
 	return nil
 }
 
-func (s *StorageMemory) RemoveURLs(urls []string) error {
+func (s *StorageMemory) RemoveURLs(ctx context.Context, urls []string) error {
 	if len(urls) == 0 {
 		return nil
 	}
@@ -294,7 +294,7 @@ func (s *StorageDB) GetAll() ([]LinkEntity, error) {
 	return links, nil
 }
 
-func (s *StorageDB) RemoveURLs(urls []string) error {
+func (s *StorageDB) RemoveURLs(ctx context.Context, urls []string) error {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return fmt.Errorf("start transaction, %s", err.Error())
@@ -303,8 +303,6 @@ func (s *StorageDB) RemoveURLs(urls []string) error {
 	if len(urls) == 0 {
 		return errors.New("list of URLs is empty")
 	}
-
-	ctx := context.Background()
 
 	stmt, err := tx.PrepareContext(ctx, "UPDATE links SET is_deleted='deleted' WHERE hash_url=$1")
 	if err != nil {
