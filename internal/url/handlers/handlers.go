@@ -62,23 +62,8 @@ func (h *ServerHandler) GetURL(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "")
 	}
 
-	//if shortURL == "" {
-	//	c.Response().WriteHeader(http.StatusGone)
-	//	return nil
-	//}
-
-	//if shortURL != "deleted" {
 	c.Response().Header().Set("Location", shortURL)
 	return c.String(http.StatusTemporaryRedirect, "")
-	//}
-
-	//if shortURL == "deleted" {
-	//	c.Response().WriteHeader(http.StatusGone)
-	//	return nil
-	//}
-
-	//return nil
-
 }
 
 func (h *ServerHandler) GetURLs(c echo.Context) error {
