@@ -201,10 +201,8 @@ func (h *ServerHandler) RemoveURLs(c echo.Context) error {
 
 	go func() {
 		for {
-			select {
-			case <-ctx.Done():
-				return // returning not to leak the goroutine
-			}
+			<-ctx.Done()
+			return // returning not to leak the goroutine
 		}
 	}()
 
