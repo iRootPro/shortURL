@@ -199,6 +199,15 @@ func (h *ServerHandler) RemoveURLs(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return // returning not to leak the goroutine
+			}
+		}
+	}()
+
 	var urls []string
 
 	if err := c.Bind(&urls); err != nil {
