@@ -199,10 +199,10 @@ func (h *ServerHandler) RemoveURLs(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	go func() {
+	go func() error {
 		for {
 			<-ctx.Done()
-			return // returning not to leak the goroutine
+			return errors.New("context done")
 		}
 	}()
 
