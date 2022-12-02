@@ -11,6 +11,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sync"
 
 	_ "github.com/lib/pq"
 )
@@ -19,6 +20,7 @@ type LinkEntity struct {
 	ID          string `json:"-"`
 	OriginalURL string `json:"original_url"`
 	ShortURL    string `json:"short_url"`
+	IsDeleted   string `json:"is_deleted"`
 }
 
 type LinkBatch struct {
@@ -42,6 +44,7 @@ type StorageMemory struct {
 
 type StorageDB struct {
 	db *sql.DB
+	wg sync.WaitGroup
 }
 
 func NewStorageFile(filename string) (*StorageFile, error) {
@@ -83,7 +86,7 @@ func NewStorageDB(dsn string) *StorageDB {
 	}
 
 	_, err = db.Exec(
-		"CREATE TABLE IF NOT EXISTS links (hash_url TEXT NOT NULL, original_url TEXT NOT NULL UNIQUE, short_url TEXT NOT NULL, correlation_id TEXT)",
+		"CREATE TABLE IF NOT EXISTS links (hash_url TEXT NOT NULL, original_url TEXT NOT NULL UNIQUE, short_url TEXT NOT NULL, correlation_id TEXT, is_deleted VARCHAR(10) DEFAULT '')",
 	)
 	if err != nil {
 		log.Fatalf("create database: %s", err.Error())
@@ -108,7 +111,6 @@ func (s *StorageFile) Batch(ctx context.Context, links []LinkBatch, baseURL stri
 }
 
 func (s *StorageFile) Get(id string) (string, error) {
-	fmt.Print(s.memory.links)
 	for _, v := range s.memory.links {
 		if v.ID == id {
 			return v.OriginalURL, nil
@@ -120,6 +122,11 @@ func (s *StorageFile) Get(id string) (string, error) {
 
 func (s *StorageFile) GetAll() ([]LinkEntity, error) {
 	return s.memory.links, nil
+}
+
+func (s *StorageFile) RemoveURLs(ctx context.Context, urls []string) error {
+	return nil
+
 }
 
 func (s *StorageFile) Close() error {
@@ -153,12 +160,15 @@ func (s *StorageMemory) Put(link LinkEntity) error {
 
 func (s *StorageMemory) Get(id string) (string, error) {
 	for _, v := range s.links {
+		if v.IsDeleted == "deleted" {
+			return "", apiError.ErrDeleteLink
+		}
 		if v.ID == id {
 			return v.OriginalURL, nil
 		}
 	}
 
-	return "", fmt.Errorf("link not found")
+	return "", apiError.ErrLinkNotFound
 }
 
 func (s *StorageMemory) GetAll() ([]LinkEntity, error) {
@@ -167,6 +177,25 @@ func (s *StorageMemory) GetAll() ([]LinkEntity, error) {
 
 func (s *StorageMemory) Close() error {
 	s.links = []LinkEntity{}
+	return nil
+}
+
+func (s *StorageMemory) RemoveURLs(ctx context.Context, urls []string) error {
+	if len(urls) == 0 {
+		return nil
+	}
+
+	m := make(map[string]bool)
+	for _, v := range urls {
+		m[v] = true
+	}
+
+	for i, v := range s.links {
+		if _, ok := m[v.ID]; ok {
+			s.links[i].IsDeleted = "deleted"
+		}
+	}
+
 	return nil
 }
 
@@ -191,10 +220,19 @@ func (s *StorageDB) Put(link LinkEntity) error {
 }
 
 func (s *StorageDB) Get(id string) (string, error) {
-	row := s.db.QueryRow("SELECT original_url from links WHERE hash_url=$1", id)
+	row := s.db.QueryRow("SELECT original_url, is_deleted from links WHERE hash_url=$1", id)
 	var originalURL string
-	if err := row.Scan(&originalURL); err != nil {
+	var isDeleted string
+	if err := row.Scan(&originalURL, &isDeleted); err != nil {
 		return "", fmt.Errorf("get url by id: %s", err.Error())
+	}
+
+	if isDeleted == "deleted" {
+		return "", apiError.ErrDeleteLink
+	}
+
+	if originalURL == "" {
+		return "", apiError.ErrLinkNotFound
 	}
 
 	return originalURL, nil
@@ -257,6 +295,62 @@ func (s *StorageDB) GetAll() ([]LinkEntity, error) {
 	return links, nil
 }
 
+func (s *StorageDB) RemoveURLs(ctx context.Context, urls []string) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("start transaction, %s", err.Error())
+	}
+
+	if len(urls) == 0 {
+		return errors.New("list of URLs is empty")
+	}
+
+	stmt, err := tx.PrepareContext(ctx, "UPDATE links SET is_deleted='deleted' WHERE hash_url=$1")
+	if err != nil {
+		return fmt.Errorf("prepare statement, %s", err.Error())
+	}
+	defer stmt.Close()
+
+	fanOutsChan := fanOut(urls, len(urls))
+
+	errCh := make(chan error)
+
+	urlsChan := make(chan string, len(urls))
+
+	for i := 0; i < 3; i++ {
+		s.wg.Add(1)
+		go func() error {
+			err = executer(ctx, stmt, tx, urlsChan)
+			if err != nil {
+				s.wg.Done()
+				return err
+			}
+			s.wg.Done()
+			return nil
+		}()
+	}
+
+	for _, item := range fanOutsChan {
+		urlsChan <- <-item
+	}
+	close(urlsChan)
+
+	go func() {
+		s.wg.Wait()
+		close(errCh)
+	}()
+
+	if err = <-errCh; err != nil {
+		return fmt.Errorf("error from channel, %s", err.Error())
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("commit db, %s", err.Error())
+	}
+
+	return nil
+}
+
 func (s *StorageDB) Close() error {
 	return nil
 }
@@ -268,5 +362,30 @@ func (s *StorageDB) Ping() error {
 
 	fmt.Println("Ping to database successful, connection is still alive")
 
+	return nil
+}
+
+func fanOut(input []string, n int) []chan string {
+	chs := make([]chan string, 0, n)
+	for i, v := range input {
+		ch := make(chan string, 1)
+		ch <- v
+		chs = append(chs, ch)
+		close(chs[i])
+	}
+	return chs
+}
+
+func executer(ctx context.Context, stmt *sql.Stmt, tx *sql.Tx, inputChan <-chan string) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	for id := range inputChan {
+		if _, err := stmt.ExecContext(ctx, id); err != nil {
+			if err = tx.Rollback(); err != nil {
+				return fmt.Errorf("rollback, %w", err)
+			}
+			return fmt.Errorf("exec, %w", err)
+		}
+	}
 	return nil
 }

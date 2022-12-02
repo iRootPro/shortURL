@@ -6,14 +6,13 @@ import (
 	"errors"
 	"fmt"
 	apiError "github.com/irootpro/shorturl/internal/error"
-	"io"
-	"net/http"
-
-	"github.com/labstack/echo/v4"
-
 	"github.com/irootpro/shorturl/internal/url/service"
 	"github.com/irootpro/shorturl/internal/url/storage"
 	"github.com/irootpro/shorturl/internal/url/usecases"
+	"github.com/labstack/echo/v4"
+	"io"
+	"net/http"
+	"time"
 )
 
 type RequestPOST struct {
@@ -40,6 +39,7 @@ type Storage interface {
 	Put(newLink storage.LinkEntity) error
 	Get(id string) (string, error)
 	GetAll() ([]storage.LinkEntity, error)
+	RemoveURLs(context.Context, []string) error
 	Close() error
 	Ping() error
 	Batch(context.Context, []storage.LinkBatch, string) ([]storage.LinkBatchResult, error)
@@ -53,7 +53,14 @@ func (h *ServerHandler) GetURL(c echo.Context) error {
 
 	shortURL, err := h.storage.Get(id)
 	if err != nil {
-		return c.String(http.StatusNotFound, err.Error())
+		switch {
+		case errors.Is(err, apiError.ErrDeleteLink):
+			c.Response().WriteHeader(http.StatusGone)
+			return nil
+		case errors.Is(err, apiError.ErrLinkNotFound):
+			return c.String(http.StatusNotFound, "link not found")
+		}
+		return c.String(http.StatusInternalServerError, "")
 	}
 
 	c.Response().Header().Set("Location", shortURL)
@@ -185,6 +192,32 @@ func (h *ServerHandler) PostURLsBatchJSON(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, result)
+}
+
+func (h *ServerHandler) RemoveURLs(c echo.Context) error {
+	ctx := c.Request().Context()
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	go func() error {
+		for {
+			<-ctx.Done()
+			return errors.New("context done")
+		}
+	}()
+
+	var urls []string
+
+	if err := c.Bind(&urls); err != nil {
+		return c.String(http.StatusInternalServerError, "")
+	}
+
+	if err := h.storage.RemoveURLs(ctx, urls); err != nil {
+		return c.String(http.StatusInternalServerError, "")
+	}
+
+	return c.String(http.StatusAccepted, "")
+
 }
 
 func (h *ServerHandler) Ping(c echo.Context) error {
